@@ -1,0 +1,10 @@
+box ansible_host=10.20.30.60.nip.io
+
+[jenkins]
+box
+
+[jenkins:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_private_key_file=~/.ssh/id_rsa
+host_key_checking=False

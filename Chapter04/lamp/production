@@ -1,0 +1,10 @@
+box ansible_host=192.168.50.4.nip.io
+
+[boxes]
+box
+
+[boxes:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_private_key_file=~/.ssh/id_rsa
+host_key_checking=False

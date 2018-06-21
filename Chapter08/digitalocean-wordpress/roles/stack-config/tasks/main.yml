@@ -1,0 +1,150 @@
+---
+# tasks file for roles/stack-config
+
+# Load the OS vars
+##################################################################################################
+
+- name: include the operating system specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+# Create the user
+##################################################################################################
+
+- name: add the wordpress group
+  group: 
+    name: "{{ wordpress_system.group }}"
+    state: "{{ wordpress_system.state }}"
+
+- name: create the global directory in /etc/nginx/
+  file:
+    dest: "/var/www/"
+    state: "directory"
+    mode: "0755"
+
+- name: add the wordpress user
+  user: 
+    name: "{{ wordpress_system.user }}"
+    group: "{{ wordpress_system.group }}"
+    comment: "{{ wordpress_system.comment }}"
+    home: "{{ wordpress_system.home }}"
+    state: "{{ wordpress_system.state }}"
+
+# Deploy the NGINX config files
+##################################################################################################
+
+- name: copy the nginx.conf to /etc/nginx/
+  template:
+    src: "nginx-nginx.conf.j2"
+    dest: "/etc/nginx/nginx.conf"
+  notify: "restart nginx"
+
+- name: create the global directory in /etc/nginx/
+  file:
+    dest: "/etc/nginx/global/"
+    state: "directory"
+    mode: "0644"
+
+- name: copy the restrictions.conf to /etc/nginx/global/
+  copy:
+    src: "nginx-global-restrictions.conf"
+    dest: "/etc/nginx/global/restrictions.conf"
+  notify: "restart nginx"
+
+- name: copy the wordpress_shared.conf to /etc/nginx/global/
+  template:
+    src: "nginx-global-wordpress_shared.conf.j2"
+    dest: "/etc/nginx/global/wordpress_shared.conf"
+  notify: "restart nginx"
+
+- name: copy the default.conf to /etc/nginx/conf.d/
+  template:
+    src: "nginx-confd-default.conf.j2"
+    dest: "/etc/nginx/conf.d/default.conf"
+  notify: "restart nginx"
+
+# Deploy the PHP-FPM config file and alter the PHP ini file
+##################################################################################################
+
+- name: copy the www.conf to /etc/php-fpm.d/
+  template:
+    src: "php-fpmd-www.conf.j2"
+    dest: "{{ php_fpm_path }}"
+  notify: "restart php-fpm"
+
+- name: configure php.ini
+  lineinfile: 
+    dest: "{{ php_ini_path }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.replace }}"
+    backup: "yes"
+    backrefs: "yes"
+  with_items: "{{ php.ini }}"
+  notify: "restart php-fpm"
+
+# Start PHP-FPM, NGINX
+##################################################################################################
+
+- name: start php-fpm
+  service:
+    name: "{{ php_service_name }}"
+    state: "started"
+
+- name: start nginx
+  service:
+    name: "nginx"
+    state: "started"
+
+# Configure MariaDB
+##################################################################################################
+
+- name: configure the mariadb bind address
+  lineinfile: 
+    dest: "{{ mariadb.server_config }}"
+    regexp: "#bind-address=0.0.0.0"
+    line: "bind-address={{ mariadb.bind }}"
+    backup: "yes"
+    backrefs: "yes"
+  when: ansible_os_family == 'RedHat'
+
+- name: start mariadb
+  service:
+    name: "mariadb"
+    state: "started"
+    enabled: "yes"
+
+- name: change mysql root password
+  mysql_user:
+    name: "{{ mariadb.username }}" 
+    host: "{{ item }}" 
+    password: "{{ mariadb.password }}"
+    check_implicit_admin: "yes"
+    priv: "*.*:ALL,GRANT"
+  with_items: "{{ mariadb.hosts }}"
+
+- name: set up .my.cnf file
+  template:
+    src: "my.cnf.j2"
+    dest: "~/.my.cnf"
+
+- name: delete anonymous MySQL user
+  mysql_user:
+    user: ""
+    host: "{{ item }}"
+    state: "absent"
+  with_items: "{{ mariadb.hosts }}"
+
+- name: remove the MySQL test database
+  mysql_db:
+    db: "test" 
+    state: "absent"
+
+# Configure SELinux
+##################################################################################################
+
+- name: set the selinux allowing httpd_t to be permissive is required
+  selinux_permissive:
+    name: httpd_t
+    permissive: true
+  when: selinux.http_permissive == true and ansible_os_family == 'RedHat'
+
+

@@ -1,0 +1,11 @@
+---
+
+- hosts: windows
+  gather_facts: true
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/iis
+    - roles/asp

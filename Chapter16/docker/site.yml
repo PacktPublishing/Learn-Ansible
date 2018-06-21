@@ -1,0 +1,9 @@
+---
+
+- hosts: docker
+  gather_facts: true
+  become: yes
+  become_method: sudo
+
+  roles:
+    - russmckendrick.docker

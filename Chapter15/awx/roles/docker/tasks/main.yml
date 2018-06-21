@@ -1,0 +1,47 @@
+---
+# tasks file for roles/docker
+
+- name: update all of the installed packages
+  yum:
+    name: "*"
+    state: "latest"
+    update_cache: "yes"
+
+- name: add the gpg key for the docker repo
+  rpm_key:
+    key: "{{ docker.gpg_key }}"
+    state: "present"
+
+- name: add docker repo from the remote url
+  get_url:
+    url: "{{ docker.repo_url }}"
+    dest: "{{ docker.repo_path }}"
+    mode: "0644"
+
+- name: install the docker packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+    update_cache: "yes"
+  with_items: "{{ docker.packages }}"
+
+- name: install pip
+  easy_install:
+    name: pip
+    state: latest
+
+- name: install the python packages
+  pip:
+    name: "{{ item }}"
+  with_items: "{{ docker.pip }}"
+
+- name: put selinux into permissive mode
+  selinux:
+    policy: targeted
+    state: permissive
+
+- name: start docker and configure to start on boot
+  service:
+    name: "docker"
+    state: "started"
+    enabled: "yes"

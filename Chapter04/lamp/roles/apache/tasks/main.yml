@@ -1,0 +1,50 @@
+---
+# tasks file for roles/apache
+
+- name: install the apache packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ apache_packages }}"
+
+- name: Add user to apache group
+  user:
+    name: "{{ item.name }}"
+    groups: "{{ apache_group }}"
+    append: yes
+  with_items: "{{ users }}"
+
+- name: create the document root for our website
+  file:
+    dest: "{{ document_root }}"
+    state: "directory"
+    mode: "0755"
+    owner: "{{ users.0.name }}"
+    group: "{{ apache_group }}"
+
+- name: set the permissions on the user folder
+  file:
+    dest: "/home/{{ users.0.name }}/"
+    state: "directory"
+    mode: "0755"
+    owner: "{{ users.0.name }}"
+
+- name: copy the vhost.conf to /etc/httpd/conf.d/
+  template:
+    src: "vhost.conf.j2"
+    dest: "/etc/httpd/conf.d/vhost.conf"
+  notify: "restart httpd"
+
+- name: set the selinux allowing httpd_t to be permissive
+  selinux_permissive:
+    name: httpd_t
+    permissive: true
+
+- name: copy the test HTML page to the document root
+  template:
+    src: "index.html.j2"
+    dest: "{{ document_root }}/index.html"
+    mode: "0644"
+    owner: "{{ users.0.name }}"
+    group: "{{ apache_group }}"
+  when: html_deploy == true

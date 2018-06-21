@@ -1,0 +1,11 @@
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/vyos-firewall

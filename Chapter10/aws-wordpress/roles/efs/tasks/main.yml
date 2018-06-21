@@ -1,0 +1,22 @@
+---
+# tasks file for roles/efs
+
+- name: generate the efs targets file
+  template:
+    src: "targets.j2"
+    dest: "group_vars/generated_efs_targets.yml"
+
+- name: load the efs targets
+  include_vars: "group_vars/generated_efs_targets.yml"
+
+- name: create the efs volume
+  efs:
+    region: "{{ ec2_region }}"
+    state: present
+    name: "{{ environment_name }}-efs"
+    tags:
+        Name: "{{ environment_name }}-efs"
+        Environment: "{{ environment_name }}"
+    targets: "{{ efs_targets }}"
+    wait: "{{ efs.wait }}"
+    wait_timeout: "{{ efs.wait_time }}"

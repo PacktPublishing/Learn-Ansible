@@ -1,0 +1,13 @@
+---
+# defaults file for roles/vyos-firewall
+
+motd_asciiart: |
+  -----------------------------
+
+  VyOS Ansible Managed Firewall    
+  
+  -----------------------------
+
+vyos_nameservers:
+  - 8.8.8.8
+  - 8.8.4.4

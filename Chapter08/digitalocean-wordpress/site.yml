@@ -1,0 +1,24 @@
+---
+
+- name: Launch the droplet in DigitalOcean
+  hosts: localhost
+  connection: local
+  gather_facts: True
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/droplet
+
+- name: Install WordPress on the droplet
+  hosts: digitalocean
+  gather_facts: true
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/stack-install
+    - roles/stack-config
+    - roles/wordpress

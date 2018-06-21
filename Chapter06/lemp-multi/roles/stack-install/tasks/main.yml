@@ -1,0 +1,13 @@
+---
+# tasks file for roles/stack-install
+
+- name: include the operating system specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: install the stack on centos
+  import_tasks: install-centos.yml
+  when: ansible_os_family == 'RedHat'
+
+- name: install the stack on ubuntu
+  import_tasks: install-ubuntu.yml
+  when: ansible_os_family == 'Debian'

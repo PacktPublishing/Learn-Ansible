@@ -1,0 +1,9 @@
+---
+# defaults file for roles/user
+
+ansible:
+  username: "ansible"
+  password: "{{ lookup('password', 'group_vars/generated_ansible chars=ascii_letters,digits length=30') }}"
+  groups:
+    - "Users"
+    - "Administrators"

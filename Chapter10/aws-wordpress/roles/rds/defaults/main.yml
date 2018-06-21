@@ -1,0 +1,14 @@
+---
+# defaults file for roles/rds
+
+rds:
+  db_username: "{{ environment_name }}"
+  db_password: "{{ lookup('password', 'group_vars/rds_passwordfile chars=ascii_letters,digits length=30') }}"
+  db_name: "{{ environment_name }}"
+  app_instance_type: "db.t2.micro"
+  engine: "mariadb"
+  hdd_size: "5"
+  no_of_backups: "7"
+  multi_az: "yes"
+  wait: "yes"
+  wait_time: "1200"

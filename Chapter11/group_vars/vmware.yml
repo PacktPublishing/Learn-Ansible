@@ -1,0 +1,21 @@
+---
+
+vcenter:
+  host: "cluster.cloud.local"
+  username: "svc_ansible@cloud.local"
+  password: "mymegasecretpassword"
+
+wait_for_ip_address: "yes"
+machine_state: "poweredon"
+
+deploy:
+  datacenter: "Cloud DC4"
+  folder: "/vm/Ansible"
+  resource_pool: "/Resources/"
+
+vm_shell:
+  username: "root"
+  password: "hushdonttell"
+  cwd: "/tmp"
+  cmd: "/bin/sed"
+  args: "-i 's/GATEWAY=192.168.1.254/GATEWAY={{ item.gateway }}/g' /etc/sysconfig/network"

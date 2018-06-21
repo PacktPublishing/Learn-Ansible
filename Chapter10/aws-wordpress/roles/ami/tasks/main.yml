@@ -1,0 +1,25 @@
+---
+# tasks file for roles/ami
+
+- name: find out some facts about the instance we have been using
+  ec2_instance_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      dns-name: "{{ groups['ec2_instance'][0] }}"
+  register: "our_instance"
+
+- name: create the AMI
+  ec2_ami:
+    region: "{{ ec2_region }}"
+    instance_id: "{{ our_instance.instances.0.instance_id }}"
+    wait: "yes"
+    name: "{{ environment_name }}-{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+    tags:
+        Name: "{{ environment_name }}-{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+        Environment: "{{ environment_name }}"
+        Date: "{{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+
+- name: wait for 2 minutes before continuing
+  pause:
+    minutes: 2
+

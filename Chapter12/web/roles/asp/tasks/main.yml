@@ -1,0 +1,29 @@
+---
+# tasks file for roles/asp
+
+- name: enable .net
+  win_feature:
+    name: 
+      - "Net-Framework-Features"
+      - "Web-Asp-Net45"
+      - "Web-Net-Ext45"
+    state: "present"
+  notify: restart iis
+
+- name: create the folder for our asp.net app
+  win_file:
+    path: "{{ aspx_document_root }}"
+    state: "directory"
+
+- name: create an aspx file from a template
+  win_template:
+    src: "default.aspx.j2"
+    dest: "{{ aspx_document_root }}{{ aspx_file }}"
+
+- name: ensure the default web application exists
+  win_iis_webapplication:
+    name: "Default"
+    state: "present"
+    physical_path: "{{ aspx_document_root }}"
+    application_pool: "DefaultAppPool"
+    site: "Default Web Site"

@@ -1,0 +1,85 @@
+---
+# tasks file for roles/mariadb
+
+- name: remove the packages so that they can be replaced
+  yum:
+    name: "{{ item }}"
+    state: "absent"
+  with_items: "{{ mariadb_packages_remove }}"
+
+- name: install the mariadb packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ mariadb_packages }}"
+
+- name: start mariadb
+  service:
+    name: "mariadb"
+    state: "started"
+    enabled: "yes"
+
+- name: change mysql root password
+  mysql_user:
+    name: "{{ mariadb_root_username }}" 
+    host: "{{ item }}" 
+    password: "{{ mariadb_root_password }}"
+    check_implicit_admin: "yes"
+    priv: "*.*:ALL,GRANT"
+  with_items: "{{ mariadb_hosts }}"
+
+- name: set up .my.cnf file
+  template:
+    src: "my.cnf.j2"
+    dest: "~/.my.cnf"
+
+- name: delete anonymous MySQL user
+  mysql_user:
+    user: ""
+    host: "{{ item }}"
+    state: "absent"
+  with_items: "{{ mariadb_hosts }}"
+
+- name: remove the MySQL test database
+  mysql_db:
+    db: "test" 
+    state: "absent"
+
+- name: download and unarchive the sample database data
+  unarchive:
+    src: "{{ mariadb_sample_database.source_url }}"
+    dest: "/tmp"
+    remote_src: "yes"
+  when: mariadb_sample_database.create_database == true
+
+- name: create the sample database
+  mysql_db:
+    db: "{{ mariadb_sample_database.db_name }}" 
+    state: "present"
+  when: mariadb_sample_database.create_database == true
+
+- name: create the user for the sample database
+  mysql_user:
+    name: "{{ mariadb_sample_database.db_user }}"
+    password: "{{ mariadb_sample_database.db_password }}"
+    priv: "{{ mariadb_sample_database.db_name }}.*:ALL"
+    state: "present"
+  with_items: "{{ mariadb_hosts }}"
+  when: mariadb_sample_database.create_database == true
+
+- name: check to see if we need to import the sample database dumps
+  stat:
+    path: "/var/lib/mysql/{{ mariadb_sample_database.db_name }}/{{ mariadb_sample_database.db_name }}.frm"
+  register: db_imported
+  when: mariadb_sample_database.create_database == true
+
+- name: import the sample database
+  mysql_db:
+    name: "{{ mariadb_sample_database.db_name }}"
+    state: "import"
+    target: "{{ mariadb_sample_database.path }}/{{ item }}"
+  with_items: "{{ mariadb_sample_database.dump_files }}"
+  when: db_imported is defined and db_imported.stat.exists == false
+
+
+

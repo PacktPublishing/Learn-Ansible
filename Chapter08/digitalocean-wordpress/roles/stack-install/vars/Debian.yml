@@ -1,0 +1,42 @@
+---
+
+# Define the default repos
+##################################################################################################
+
+repo_packages:
+  - "deb [arch=amd64,i386] http://mirror.sax.uk.as61049.net/mariadb/repo/10.1/ubuntu {{ ansible_distribution_release }} main"
+  - "deb http://nginx.org/packages/mainline/ubuntu/ {{ ansible_distribution_release }} nginx"
+  - "deb-src http://nginx.org/packages/mainline/ubuntu/ {{ ansible_distribution_release }} nginx"
+
+repo_keys:
+  - { key_server: "keyserver.ubuntu.com", key: "0xF1656F24C74CD1D8" }
+
+repo_keys_url:
+  - "http://nginx.org/keys/nginx_signing.key"
+
+# Define the default packages
+##################################################################################################
+
+system_packages:
+  - "software-properties-common"
+  - "python3-mysqldb"
+  - "acl"
+
+stack_packages:
+  - "nginx"
+  - "mariadb-server"
+  - "php7.0"
+  - "php7.0-cli"
+  - "php7.0-fpm"
+  - "php7.0-gd"
+  - "php7.0-json"
+  - "php7.0-mbstring"
+  - "php7.0-mysqlnd"
+  - "php7.0-soap"
+  - "php7.0-xml"
+  - "php7.0-xmlrpc"
+
+extra_packages:
+  - "vim"
+  - "git"
+  - "unzip"

@@ -1,0 +1,45 @@
+---
+# tasks file for roles/fix-ansible
+
+- name: fix missing folders
+  file:
+    path: "{{ item }}"
+    state: "directory"
+  with_items: "{{ missing_folders }}"
+
+- name: fix missing files
+  file:
+    path: "{{ item }}"
+    state: "touch"
+  with_items: "{{ missing_files }}"
+
+- name: do we already have the playbook?
+  stat:
+    path: "{{ playbook_file.remote }}"
+  register: playbook_check
+
+- name: generate the ansible playbook with the fixes
+  command: "{{ ansible_fix_command }}"
+  args:
+    creates: "{{ playbook_file.remote }}"  
+  ignore_errors: yes
+
+- name: download the ansible playbook
+  fetch:
+    src: "{{ playbook_file.remote }}"
+    dest: "{{ playbook_file.local }}"
+    flat: yes
+  when: playbook_check.stat.exists == False
+
+- name: run the ansible playbook locally
+  local_action:
+    module: "command ansible-playbook -i production --become --become-method sudo {{ playbook_file.local }}"
+  become: no
+  register: playbook_run
+  when: playbook_check.stat.exists == False
+
+- name: write the results to a log file
+  local_action:
+    module: "copy content={{ playbook_run.stdout }} dest={{ playbook_file.log }}"
+  become: no
+  when: playbook_check.stat.exists == False

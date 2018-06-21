@@ -1,0 +1,11 @@
+---
+
+oscap:
+  profile: "xccdf_org.ssgproject.content_profile_pci-dss"
+  policy: "ssg-centos7-ds.xml"
+  policy_path: "/usr/share/xml/scap/ssg/content/"
+
+report:
+  report_remote_path: "/tmp/{{ inventory_hostname }}_report_{{ report_name }}.html"
+  report_local_path: "generated/{{ inventory_hostname }}_report_{{ report_name }}.html"
+  results: "/tmp/{{ inventory_hostname }}_results_{{ report_name }}.xml"

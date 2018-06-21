@@ -1,0 +1,25 @@
+---
+# tasks file for roles/stack
+
+- name: update all of the installed packages
+  yum:
+    name: "*"
+    state: "latest"
+    update_cache: "yes"
+
+- name: are the wordpress files already there?
+  stat:
+    path: "{{ wordpress_system.home }}/index.php"
+  register: wp_installed
+
+- name: if no wordpress installed install and configure the software stack
+  include_role:
+    name: "stack"
+    tasks_from: "deploy.yml"
+  when: wp_installed.stat.exists == False
+
+- name: if no wordpress installed, install it !!!
+  include_role:
+    name: "stack"
+    tasks_from: "wordpress.yml"
+  when: wp_installed.stat.exists == False

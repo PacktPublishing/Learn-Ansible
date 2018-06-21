@@ -1,0 +1,10 @@
+---
+# defaults file for web/roles/iis
+
+document_root: 'C:\inetpub\wwwroot\'
+html_file: ansible.html
+
+html_heading: "Success !!!"
+html_body: |
+  This HTML page has been deployed using Ansible to a <b>{{ ansible_distribution }}</b> host.<br><br>
+  The weboot is <b>{{ document_root }}</b> this file is called <b>{{ html_file }}</b>.<br>

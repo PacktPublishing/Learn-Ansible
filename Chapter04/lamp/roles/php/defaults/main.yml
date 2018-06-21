@@ -1,0 +1,30 @@
+---
+# defaults file for roles/php
+
+php_packages:
+  - "php72u"
+  - "php72u-bcmath"
+  - "php72u-cli"
+  - "php72u-common"
+  - "php72u-dba"
+  - "php72u-fpm"
+  - "php72u-fpm-httpd"
+  - "php72u-gd"
+  - "php72u-intl"
+  - "php72u-json"
+  - "php72u-mbstring"
+  - "php72u-mysqlnd"
+  - "php72u-odbc"
+  - "php72u-pdo"
+  - "php72u-process"
+  - "php72u-snmp"
+  - "php72u-soap"
+  - "php72u-xml"
+  - "php72u-xmlrpc"
+
+php_info: true
+
+adminer:
+  install: true
+  path: "/usr/share/adminer"
+  download: "https://github.com/vrana/adminer/releases/download/v4.6.2/adminer-4.6.2-mysql.php"

@@ -1,0 +1,22 @@
+---
+# defaults file for roles/apache
+
+apache_packages:
+  - "httpd24u"
+  - "httpd24u-filesystem"
+  - "httpd24u-tools"
+  - "httpd24u-mod_ssl"
+  - "openssl"
+  - "openssl-libs"
+
+apache_group: "apache"
+web_root: "web"
+document_root: "/home/{{ users.0.name }}/{{ web_root }}"
+index_file: index.html
+
+html_deploy: true
+html_heading: "Success !!!"
+html_body: |
+  This HTML page has been deployed using Ansible to <b>{{ ansible_nodename }}</b>.<br>
+  The user is <b>{{ users.0.name }}</b> who is in the <b>{{ apache_group }}</b> group.<br>
+  The weboot is <b>{{ document_root }}</b>, the default index file is <b>{{ index_file }}</b>.<br>

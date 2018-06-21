@@ -1,0 +1,25 @@
+---
+# defaults file for roles/wordpress
+
+wp_cli:
+  download: "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar"
+  path: "/usr/local/bin/wp"
+
+wp_database:
+  name: "wordpress"
+  username: "wordpress"
+  password: "W04DPr3S5"
+
+wordpress:
+  domain: "http://{{ wordpress_domain }}/"
+  title: "WordPress installed by Ansible on {{ os_family }}"
+  username: "ansible"
+  password: "password"
+  email: "test@example.com"
+  theme: "sydney"
+  plugins:
+    - "jetpack"
+    - "wp-super-cache"
+    - "wordpress-seo"
+    - "wordfence"
+    - "nginx-helper"

@@ -1,0 +1,24 @@
+---
+
+- name: Launch the VMs
+  vmware_guest:
+    hostname: "{{vcenter.host}}"
+    username: "{{ vcenter.username }}"
+    password: "{{ vcenter.password }}"
+    validate_certs: no
+    datacenter: "{{ deploy.datacenter }}"
+    folder: "{{ deploy.folder }}"
+    name: "{{  item.machine_name | upper }}"
+    state: "{{ machine_state }}"
+    guest_id: "{{ item.guest_id }}"
+    esxi_hostname: "{{ item.host }}"
+    hardware:
+      memory_mb: "{{ item.ram }}"
+      num_cpus: "{{ item.cpu }}"
+    networks: "{{ item.networks }}"
+    disk: "{{ item.disk }}"
+    template: "{{ item.machine_template }}"
+    wait_for_ip_address: "{{ wait_for_ip_address }}"
+    customization:
+      hostname: "{{ item.machine_name | lower }}"
+  with_items: "{{ vm }}"

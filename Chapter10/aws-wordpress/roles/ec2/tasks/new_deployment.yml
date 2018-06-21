@@ -1,0 +1,91 @@
+---
+
+- name: search for all of the AMIs in the defined region which match our selection
+  ec2_ami_facts:
+    region: "{{ ec2_region }}"
+    owners: "{{ image.owner }}"
+    filters:
+      name: "{{ image.base }}"
+      architecture: "{{ image.architecture }}"
+      root-device-type: "{{ image.root_device }}"  
+  register: amiFind
+
+- name: filter the list of AMIs to find the latest one with an EBS backed volume
+  set_fact:
+    amiSortFilter: "{{ amiFind.images | sort(attribute='creation_date') | last }}"
+
+- name: finally grab AMI ID of the most recent result which matches our base image which is backed by an EBS volume
+  set_fact:
+    our_ami_id: "{{ amiSortFilter.image_id }}"
+
+- name: check the user {{ ansible_user_id }} has a key, if not create one
+  user:
+    name: "{{ ansible_user_id }}"
+    generate_ssh_key: yes
+    ssh_key_file: "~/.ssh/id_rsa"
+
+- name: upload the users public key
+  ec2_key:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-{{ ansible_user_id }}"
+    key_material: "{{ item }}"
+  with_file: "~/.ssh/id_rsa.pub"
+
+- name: launch an instance
+  ec2_instance:
+    region: "{{ ec2_region }}"
+    state: "present"
+    instance_type: "{{ ec2_instance_type }}"
+    image_id: "{{ our_ami_id }}"
+    wait: yes
+    key_name: "{{ environment_name }}-{{ ansible_user_id }}"
+    security_groups: [ "{{ sg_ec2.group_id }}" ]
+    network: 
+      assign_public_ip: true
+    filters:
+      instance-state-name: "running"
+      "tag:Name": "{{ environment_name }}-tmp"
+      "tag:environment": "{{ environment_name }}"
+    vpc_subnet_id: "{{ subnet_ec2_ids[0] }}"
+    tags:
+      Name: "{{ environment_name }}-tmp"
+      environment: "{{ environment_name }}"
+
+- name: gather facts on the instance we just launched using the AWS API
+  ec2_instance_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      instance-state-name: "running"
+      "tag:Name": "{{ environment_name }}-tmp"
+      "tag:environment": "{{ environment_name }}"
+  register: singleinstance
+
+- name: add our temporary instance to a host group for use in the next step
+  add_host:
+    name: "{{ item.public_dns_name }}"
+    ansible_ssh_host: "{{ item.public_dns_name }}"
+    groups: "ec2_instance"
+  with_items: "{{ singleinstance.instances }}"
+
+- name: wait until SSH is available before moving onto the next step
+  wait_for:
+    host: "{{ item.public_dns_name }}"
+    port: 22
+    delay: 2
+    timeout: 320
+    state: "started"
+  with_items: "{{ singleinstance.instances }}"
+
+- name: add the instance to the taget group
+  elb_target_group:
+    name: "{{ environment_name }}-target-group"
+    region: "{{ ec2_region }}"
+    protocol: "http"
+    port: "80"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    state: "present"
+    targets:
+      - Id: "{{ item.instance_id }}"
+        Port: "80"
+    modify_targets: "true"
+  with_items: "{{ singleinstance.instances }}"

@@ -1,0 +1,5 @@
+---
+
+environment_name: "windows_example"
+ec2_region: "eu-west-1"
+

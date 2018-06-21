@@ -1,0 +1,14 @@
+- name: Create and configure an Amazon VPC
+  hosts: localhost
+  connection: local
+  gather_facts: True
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/vpc
+    - roles/subnets
+    - roles/gateway
+    - roles/securitygroups
+    - roles/elb

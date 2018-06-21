@@ -1,0 +1,15 @@
+---
+# defaults file for roles/awx
+
+awx:
+  repo_url: "https://github.com/ansible/awx.git"
+  logo_url: "https://github.com/ansible/awx-logos.git"
+  repo_path: "~/awx/"
+  packages:
+    - "git"
+  pip:
+    - "ansible"
+    - "boto"
+    - "boto3"
+    - "botocore"
+  install_command: 'ansible-playbook -i inventory --extra-vars "awx_official=true" install.yml'

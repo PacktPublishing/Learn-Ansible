@@ -1,0 +1,14 @@
+# Register all of the host groups we will be creating in the playbooks
+[ec2_instance]
+[already_running]
+
+# Put all the groups into into a single group so we can easily apply one config to it for overiding things like the ssh user and key location
+[aws:children]
+ec2_instance
+already_running
+
+# Finally, configure some bits to allow us access to the instances before we deploy our credentials using Ansible
+[aws:vars]
+ansible_ssh_user=centos
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+host_key_checking=False

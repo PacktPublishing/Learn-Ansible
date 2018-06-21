@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+
+upstream {{ php.upstream }} {
+        server {{ php.ip }}:{{ php.port }};
+}
+
+server {
+    listen       80;
+	server_name  {{ ansible_nodename }};
+	root         {{ wordpress_system.home }};
+	index        index.php index.html index.htm;
+
+    include global/restrictions.conf;
+    include global/wordpress_shared.conf;
+
+}

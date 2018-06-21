@@ -1,0 +1,7 @@
+---
+
+- name: add one of our running instances to a host group for use in the next step
+  add_host:
+    name: "{{ groups['already_running'][0] }}"
+    ansible_ssh_host: "{{ groups['already_running'][0] }}"
+    groups: "ec2_instance"

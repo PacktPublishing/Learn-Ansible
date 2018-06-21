@@ -1,0 +1,10 @@
+---
+# tasks file for roles/user
+
+- name: ensure that the ansiable created users are present
+  win_user:
+    name: "{{ ansible.username }}"
+    fullname: "{{ ansible.username | capitalize }}"
+    password: "{{ ansible.password }}"
+    state: "present"
+    groups: "{{ ansible.groups }}"

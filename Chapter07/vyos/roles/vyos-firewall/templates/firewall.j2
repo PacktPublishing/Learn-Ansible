@@ -1,0 +1,58 @@
+set firewall all-ping 'enable'
+set firewall broadcast-ping 'disable'
+set firewall ipv6-receive-redirects 'disable'
+set firewall ipv6-src-route 'disable'
+set firewall ip-src-route 'disable'
+set firewall log-martians 'enable'
+set firewall receive-redirects 'disable'
+set firewall send-redirects 'enable'
+set firewall source-validation 'disable'
+set firewall state-policy established action 'accept'
+set firewall state-policy related action 'accept'
+set firewall syn-cookies 'enable'
+set firewall name OUTSIDE-IN default-action 'drop'
+set firewall name OUTSIDE-IN description 'deny traffic from internet'
+{% for item in whitelist_ips %}
+set firewall group address-group SSH-ACCESS address {{ item }}
+{% endfor %}
+set firewall name OUTSIDE-LOCAL rule 310 source group address-group SSH-ACCESS
+set firewall name OUTSIDE-LOCAL default-action 'drop'
+set firewall name OUTSIDE-LOCAL rule 310 action 'accept'
+set firewall name OUTSIDE-LOCAL rule 310 destination port '22'
+set firewall name OUTSIDE-LOCAL rule 310 protocol 'tcp'
+set firewall name OUTSIDE-LOCAL rule 900 action 'accept'
+set firewall name OUTSIDE-LOCAL rule 900 description 'allow icmp'
+set firewall name OUTSIDE-LOCAL rule 900 protocol 'icmp'
+set firewall receive-redirects 'disable'
+set firewall send-redirects 'enable'
+set firewall source-validation 'disable'
+set firewall state-policy established action 'accept'
+set firewall state-policy related action 'accept'
+set firewall syn-cookies 'enable'
+set interfaces ethernet eth0 firewall in name 'OUTSIDE-IN'
+set interfaces ethernet eth0 firewall local name 'OUTSIDE-LOCAL'
+set interfaces ethernet eth1 address '{{ vyos.inside.interface }}'
+set interfaces ethernet eth1 description 'INSIDE'
+set interfaces ethernet eth1 duplex 'auto'
+set interfaces ethernet eth1 speed 'auto'
+set nat source rule 100 outbound-interface 'eth0'
+set nat source rule 100 source address '{{ vyos.inside.subnet }}'
+set nat source rule 100 translation address 'masquerade'
+{% for item in rules if item.action == "set" %}
+{{ item.action }} nat destination rule {{ item.rule_number }} description '{{ item.description }}'
+{{ item.action }} nat destination rule {{ item.rule_number }} destination port '{{ item.source_port }}'
+{{ item.action }} nat destination rule {{ item.rule_number }} translation port '{{ item.destination_port }}'
+{{ item.action }} nat destination rule {{ item.rule_number }} inbound-interface 'eth0'
+{{ item.action }} nat destination rule {{ item.rule_number }} protocol '{{ item.protocol }}'
+{{ item.action }} nat destination rule {{ item.rule_number }} translation address '{{ item.destination_address }}'
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }} action 'accept'
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }} source address '{{ item.source_address }}'
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }} destination address '{{ item.destination_address }}'
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }} destination port '{{ item.destination_port }}'
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }} protocol '{{ item.protocol }}'
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }} state new 'enable'
+{% endfor %}
+{% for item in rules if item.action == "delete" %}
+{{ item.action }} nat destination rule {{ item.rule_number }}
+{{ item.action }} firewall name OUTSIDE-IN rule {{ item.rule_number }}
+{% endfor %}

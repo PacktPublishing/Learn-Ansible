@@ -1,0 +1,5 @@
+---
+# the common varibles
+
+environment_name: "my-vpc"
+ec2_region: "eu-west-1"

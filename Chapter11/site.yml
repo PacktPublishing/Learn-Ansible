@@ -1,0 +1,14 @@
+---
+
+- name: Launch the VMs
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars_files:
+    - group_vars/vmware.yml
+    - group_vars/vms.yml
+
+  roles:
+    - vmware
+    - fix

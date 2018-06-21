@@ -1,0 +1,8 @@
+---
+# defaults file for roles/zap
+
+image: "owasp/zap2docker-stable"
+log:
+  remote_folder: /tmp/zap/
+  local_folder: "generated/"
+  file: "{{ ansible_date_time.date }}-{{ ansible_date_time.hour }}-{{ ansible_date_time.minute }}.html"

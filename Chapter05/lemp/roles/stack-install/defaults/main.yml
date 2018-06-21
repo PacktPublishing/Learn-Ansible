@@ -1,0 +1,57 @@
+---
+# defaults file for roles/stack-install
+
+# Define the default repos
+##################################################################################################
+
+repo_packages:
+  - "epel-release"
+  - "https://centos7.iuscommunity.org/ius-release.rpm"
+
+nginx_repo:
+  name: "nginx"
+  description: "The mainline NGINX repo"
+  baseurl: "http://nginx.org/packages/mainline/centos/7/$basearch/"
+  gpgcheck: "no"
+  enabled: "yes"
+
+# Define the default packages
+##################################################################################################
+
+packages_remove:
+  - "mariadb-libs.x86_64"
+
+system_packages:
+  - "postfix"
+  - "MySQL-python"
+  - "policycoreutils-python"
+
+stack_packages:
+  - "nginx"
+  - "mariadb101u"
+  - "mariadb101u-server"
+  - "mariadb101u-config"
+  - "mariadb101u-common"
+  - "mariadb101u-libs"
+  - "php72u"
+  - "php72u-bcmath"
+  - "php72u-cli"
+  - "php72u-common"
+  - "php72u-dba"
+  - "php72u-fpm"
+  - "php72u-fpm-nginx"
+  - "php72u-gd"
+  - "php72u-intl"
+  - "php72u-json"
+  - "php72u-mbstring"
+  - "php72u-mysqlnd"
+  - "php72u-process"
+  - "php72u-snmp"
+  - "php72u-soap"
+  - "php72u-xml"
+  - "php72u-xmlrpc"
+
+extra_packages:
+  - "vim-enhanced"
+  - "git"
+  - "unzip"

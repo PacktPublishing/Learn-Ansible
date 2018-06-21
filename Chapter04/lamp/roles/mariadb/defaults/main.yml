@@ -1,0 +1,42 @@
+---
+# defaults file for roles/mariadb
+
+mariadb_packages_remove:
+  - "mariadb-libs.x86_64"
+
+mariadb_packages:
+  - "mariadb101u"
+  - "mariadb101u-server"
+  - "mariadb101u-config"
+  - "mariadb101u-common"
+  - "mariadb101u-libs"
+  - "MySQL-python"
+  - "postfix"
+
+mariadb_root_username: "root"
+mariadb_root_password: "Pa55W0rd123"
+mariadb_hosts:
+  - "127.0.0.1"
+  - "::1"
+  - "{{ ansible_nodename }}"
+  - "%"
+  - "localhost"
+
+mariadb_sample_database:
+  create_database: true
+  source_url: "https://github.com/russmckendrick/test_db/archive/master.zip"
+  path: "/tmp/test_db-master"
+  db_name: "employees"
+  db_user: "employees"
+  db_password: "employees"
+  dump_files:
+    - "employees.sql"
+    - "load_departments.dump"
+    - "load_employees.dump"
+    - "load_dept_emp.dump"
+    - "load_dept_manager.dump"
+    - "load_titles.dump"
+    - "load_salaries1.dump"
+    - "load_salaries2.dump"
+    - "load_salaries3.dump"
+    - "show_elapsed.sql"

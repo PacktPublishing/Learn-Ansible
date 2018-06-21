@@ -1,0 +1,6 @@
+---
+# defaults file for roles/efs
+
+efs:
+  wait: "yes"
+  wait_time: "1200"

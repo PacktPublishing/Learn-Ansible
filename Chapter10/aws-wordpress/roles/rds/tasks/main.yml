@@ -1,0 +1,31 @@
+---
+# tasks file for roles/rds
+
+- name: create RDS subnet group
+  rds_subnet_group:
+    region: "{{ ec2_region }}"
+    state: present
+    name: "{{ environment_name }}_rds_group"
+    description: "RDS Group for {{ environment_name }}"
+    subnets: "{{ subnet_rds_ids }}"
+
+- name: launch the rds instance
+  rds:
+    region: "{{ ec2_region }}"
+    command: "create"
+    instance_name: "{{ environment_name }}-rds"
+    db_engine: "{{ rds.engine }}"
+    size: "{{ rds.hdd_size }}"
+    backup_retention: "{{ rds.no_of_backups }}"
+    instance_type: "{{ rds.app_instance_type }}"
+    multi_zone: "{{ rds.multi_az }}"
+    subnet: "{{ environment_name }}_rds_group"
+    vpc_security_groups: "{{ sg_rds.group_id }}"
+    username: "{{ rds.db_username }}"
+    password: "{{ rds.db_password }}"
+    db_name: "{{ rds.db_name }}"
+    wait: "{{ rds.wait }}"
+    wait_timeout: "{{ rds.wait_time }}"
+    tags:
+      Name: "{{ environment_name }}-rds"
+      Environment: "{{ environment_name }}"

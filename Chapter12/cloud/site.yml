@@ -1,0 +1,24 @@
+---
+
+- name: Create the AWS environment and launch an EC2 instance
+  hosts: localhost
+  connection: local
+  gather_facts: True
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/aws
+
+- name: Bootstrap the EC2 instance
+  hosts: ec2_instance
+  gather_facts: true
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/user
+    - roles/choc
+    - roles/info

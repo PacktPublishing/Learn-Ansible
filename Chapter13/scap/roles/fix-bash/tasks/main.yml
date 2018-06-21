@@ -1,0 +1,25 @@
+---
+# tasks file for roles/fix-bash
+
+- name: do we already have the bash script?
+  stat:
+    path: "{{ bash_file.remote }}"
+  register: bash_script_check
+
+- name: generate the bash script
+  command: "{{ bash_fix_command }}"
+  args:
+    creates: "{{ bash_file.remote }}"  
+  ignore_errors: yes
+
+- name: run the bash script
+  command: "bash {{ bash_file.remote }}"
+  ignore_errors: yes
+  register: bash_run
+  when: bash_script_check.stat.exists == False
+
+- name: write the results to a log file
+  local_action:
+    module: "copy content={{ bash_run.stdout }} dest={{ bash_file.log }}"
+  become: no
+  when: bash_script_check.stat.exists == False

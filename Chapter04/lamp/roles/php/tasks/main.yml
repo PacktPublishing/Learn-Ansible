@@ -1,0 +1,41 @@
+---
+# tasks file for roles/php
+
+- name: install the php packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ php_packages }}"
+  notify:
+    - "restart php-fpm"
+    - "restart httpd"
+
+- name: copy the test PHP page to the document root
+  copy:
+    src: "info.php"
+    dest: "{{ document_root }}/info.php"
+    mode: "0755"
+    owner: "{{ users.0.name }}"
+    group: "{{ apache_group }}"
+  when: php_info == true
+
+- name: create the document root for adminer
+  file:
+    dest: "{{ adminer.path }}"
+    state: "directory"
+    mode: "0755"
+  when: adminer.install == true
+
+- name: download adminer
+  get_url:
+    url: "{{ adminer.download }}"
+    dest: "{{ adminer.path }}/index.php"
+    mode: 0755
+  when: adminer.install == true
+
+- name: copy the vhost.conf to /etc/httpd/conf.d/
+  template:
+    src: "adminer.conf.j2"
+    dest: "/etc/httpd/conf.d/adminer.conf"
+  when: adminer.install == true
+  notify: "restart httpd"

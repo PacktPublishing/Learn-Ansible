@@ -1,0 +1,88 @@
+---
+# tasks file for roles/securitygroups
+
+- name: provision elb security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    name: "{{ environment_name }}-elb"
+    description: "opens port 80 and 443 to the world"
+    tags:
+      "Name": "{{ environment_name }}-elb"
+      "Environment": "{{ environment_name }}"
+    rules:
+      - proto: "tcp"
+        from_port: "80"
+        to_port: "80"
+        cidr_ip: "0.0.0.0/0"
+        rule_desc: "allow all on port 80"
+      - proto: "tcp"
+        from_port: "443"
+        to_port: "443"
+        cidr_ip: "0.0.0.0/0"
+        rule_desc: "allow all on port 443"
+  register: sg_elb
+
+- name: find out your current public IP address using https://ipify.org/
+  ipify_facts:
+  register: public_ip
+
+- name: set your public ip as a fact
+  set_fact:
+    your_public_ip: "{{ public_ip.ansible_facts.ipify_public_ip }}/32"
+
+- name: provision ec2 security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    name: "{{ environment_name }}-ec2"
+    description: "opens port 22 to a trusted IP and port 80 to the elb group"
+    tags:
+      "Name": "{{ environment_name }}-ec2"
+      "Environment": "{{ environment_name }}"
+    rules:
+      - proto: "tcp"
+        from_port: "22"
+        to_port: "22"
+        cidr_ip: "{{ your_public_ip }}"
+        rule_desc: "allow {{ your_public_ip }} access to port 22"
+      - proto: "tcp"
+        from_port: "80"
+        to_port: "80"
+        group_id: "{{ sg_elb.group_id }}"
+        rule_desc: "allow {{ sg_elb.group_id }} access to port 80"
+  register: sg_ec2
+
+- name: provision rds security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    name: "{{ environment_name }}-rds"
+    description: "opens port 3306 to the ec2 instances"
+    tags:
+      "Name": "{{ environment_name }}-rds"
+      "Environment": "{{ environment_name }}"
+    rules:
+      - proto: "tcp"
+        from_port: "3306"
+        to_port: "3306"
+        group_id: "{{ sg_ec2.group_id }}"
+        rule_desc: "allow {{ sg_ec2.group_id }} access to port 3306"
+  register: sg_rds
+
+- name: provision efs security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    name: "{{ environment_name }}-efs"
+    description: "opens port 2049 to the ec2 instances"
+    tags:
+      "Name": "{{ environment_name }}-efs"
+      "Environment": "{{ environment_name }}"
+    rules:
+      - proto: "tcp"
+        from_port: "2049"
+        to_port: "2049"
+        group_id: "{{ sg_ec2.group_id }}"
+        rule_desc: "allow {{ sg_ec2.group_id }} access to port 2049"
+  register: sg_efs

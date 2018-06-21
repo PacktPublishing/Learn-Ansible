@@ -1,0 +1,47 @@
+    # http://wiki.nginx.org/WordPress
+    # This is cool because no php is touched for static content. 
+    # Include the "?$args" part so non-default permalinks doesn't break when using query string
+        location / {
+            try_files $uri $uri/ /index.php?$args;
+        }
+
+        # Set the X-Frame-Options
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Xss-Protection "1; mode=block" always;
+        add_header X-Content-Type-Options "nosniff" always;
+ 
+    # Do not log + cache images, css, js, etc
+        location ~* \.(ico|css|js|gif|jpeg|jpg|png|woff|ttf|otf|svg|woff2|eot)$ {
+            expires max;
+            log_not_found off;
+            access_log off;
+         # Send the all shebang in one fell swoop
+            tcp_nodelay off;
+        # Set the OS file cache
+            open_file_cache max=1000 inactive=120s;
+            open_file_cache_valid 45s;
+            open_file_cache_min_uses 2;
+            open_file_cache_errors off;
+        }
+
+    # Handle .php files
+        location ~ \.php$ {
+            try_files $uri =404;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            include /etc/nginx/fastcgi_params;
+            fastcgi_connect_timeout 180s;
+            fastcgi_send_timeout 180s;
+            fastcgi_read_timeout 180s;
+            fastcgi_intercept_errors on;
+            fastcgi_max_temp_file_size 0;
+            fastcgi_pass {{ php.upstream }};
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_index index.php;
+        }
+  
+    # Rewrite rules for Wordpress SEO by Yoast
+        rewrite ^/sitemap_index\.xml$ /index.php?sitemap=1 last;
+        rewrite ^/([^/]+?)-sitemap([0-9]+)?\.xml$ /index.php?sitemap=$1&sitemap_n=$2 last;
+ 
+    # Add trailing slash to */wp-admin requests
+        rewrite /wp-admin$ $scheme://$host$uri/ permanent;

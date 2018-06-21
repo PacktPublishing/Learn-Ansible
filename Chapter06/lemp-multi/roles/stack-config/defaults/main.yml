@@ -1,0 +1,35 @@
+---
+# defaults file for roles/stack-config
+
+# Details of the WordPress system user
+##################################################################################################
+
+wordpress_system:
+  user: "wordpress"
+  group: "php-fpm"
+  comment: "wordpress system user"
+  home: "/var/www/wordpress"
+  state: "present"
+
+php:
+  ip: "127.0.0.1"
+  port: "9000"
+  upstream: "php"
+  ini:
+    - { regexp: '^;date.timezone =', replace: 'date.timezone = Europe/London' }
+    - { regexp: '^expose_php = On', replace: 'expose_php = Off' }
+    - { regexp: '^upload_max_filesize = 2M', replace: 'upload_max_filesize = 20M' }
+
+mariadb:
+  bind: "127.0.0.1"
+  server_config: "/etc/my.cnf.d/mariadb-server.cnf"
+  username: "root"
+  password: "Pa55W0rd123"
+  hosts:
+    - "127.0.0.1"
+    - "::1"
+    - "{{ ansible_nodename }}"
+    - "localhost"
+
+selinux:
+  http_permissive: true

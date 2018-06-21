@@ -1,0 +1,43 @@
+---
+
+- name: Create, launch and configure our basic AWS enviroment
+  hosts: localhost
+  connection: local
+  gather_facts: True
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/vpc
+    - roles/subnets
+    - roles/gateway
+    - roles/securitygroups
+    - roles/elb
+    - roles/rds
+    - roles/efs
+    - roles/ec2
+
+- name: Configure / update the EC2 instance
+  hosts: ec2_instance
+  become: yes
+  become_method: sudo
+  gather_facts: True
+
+  vars_files: 
+    - group_vars/common.yml
+
+  roles:
+    - roles/stack
+
+- name: Create, launch and configure our AMI
+  hosts: localhost
+  connection: local
+  gather_facts: True
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/ami
+    - roles/autoscaling

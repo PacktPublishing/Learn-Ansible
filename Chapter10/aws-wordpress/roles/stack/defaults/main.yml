@@ -1,0 +1,76 @@
+---
+# defaults file for roles/stack
+
+wp_cli:
+  download: "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar"
+  path: "/usr/local/bin/wp"
+
+wordpress:
+  domain: "http://{{ elb_results.load_balancers[0].dns_name  }}/"
+  title: "WordPress installed by Ansible on AWS"
+  username: "ansible"
+  password: "password"
+  email: "test@example.com"
+
+efs_mount_dir: "/efs"
+
+wordpress_system:
+  user: "wordpress"
+  group: "php-fpm"
+  comment: "wordpress system user"
+  home: "{{ efs_mount_dir }}/wordpress"
+  state: "present"
+
+php:
+  ip: "127.0.0.1"
+  port: "9000"
+  upstream: "php"
+  ini:
+    - { regexp: '^;date.timezone =', replace: 'date.timezone = Europe/London' }
+    - { regexp: '^expose_php = On', replace: 'expose_php = Off' }
+    - { regexp: '^upload_max_filesize = 2M', replace: 'upload_max_filesize = 20M' }
+
+selinux:
+  http_permissive: true
+
+repo_packages:
+  - "epel-release"
+  - "https://centos7.iuscommunity.org/ius-release.rpm"
+
+nginx_repo:
+  name: "nginx"
+  description: "The mainline NGINX repo"
+  baseurl: "http://nginx.org/packages/mainline/centos/7/$basearch/"
+  gpgcheck: "no"
+  enabled: "yes"
+
+system_packages:
+  - "MySQL-python"
+  - "policycoreutils-python"
+  - "nfs-utils"
+
+stack_packages:
+  - "nginx"
+  - "mariadb"
+  - "php72u"
+  - "php72u-bcmath"
+  - "php72u-cli"
+  - "php72u-common"
+  - "php72u-dba"
+  - "php72u-fpm"
+  - "php72u-fpm-nginx"
+  - "php72u-gd"
+  - "php72u-intl"
+  - "php72u-json"
+  - "php72u-mbstring"
+  - "php72u-mysqlnd"
+  - "php72u-process"
+  - "php72u-snmp"
+  - "php72u-soap"
+  - "php72u-xml"
+  - "php72u-xmlrpc"
+
+extra_packages:
+  - "vim-enhanced"
+  - "git"
+  - "unzip"

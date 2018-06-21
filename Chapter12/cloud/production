@@ -1,0 +1,7 @@
+[ec2_instance]
+
+[ec2_instance:vars]
+ansible_connection=winrm
+ansible_user="Administrator"
+ansible_password="{{ lookup('password', 'group_vars/generated_administrator chars=ascii_letters,digits length=30') }}"
+ansible_winrm_server_cert_validation=ignore

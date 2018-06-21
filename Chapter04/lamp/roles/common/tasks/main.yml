@@ -1,0 +1,40 @@
+---
+# tasks file for roles/common
+
+- name: update all of the installed packages
+  yum:
+    name: "*"
+    state: "latest"
+    update_cache: "yes"
+
+- name: install the common packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ common_packages }}"
+
+- name: copy the ntp.conf to /etc/ntp.conf
+  template:
+    src: "ntp.conf.j2"
+    dest: "/etc/ntp.conf"
+  notify: "restart ntp"
+
+- name: add group for our users
+  group:
+    name: "{{ item.group }}"
+    state: "{{ item.state }}"
+  with_items: "{{ users }}"
+
+- name: add users to our group
+  user: 
+    name: "{{ item.name }}"
+    group: "{{ item.group }}"
+    comment: "{{ item.name }}"
+    state: "{{ item.state }}"
+  with_items: "{{ users }}"
+
+- name: add keys to our users
+  authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.key }}"
+  with_items: "{{ users }}"

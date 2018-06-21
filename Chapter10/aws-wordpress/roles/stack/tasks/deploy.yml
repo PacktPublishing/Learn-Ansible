@@ -1,0 +1,107 @@
+---
+# tasks file for roles/deploy
+
+- name: find some information on the elastic load balancer
+  local_action:
+    module: efs_facts
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-efs"
+  become: no
+
+- name: ensure EFS volume is mounted.
+  mount:
+    name: "{{ efs_mount_dir }}"
+    src: "{{ efs[0].file_system_id }}.efs.{{ ec2_region }}.amazonaws.com:/"
+    fstype: nfs4
+    opts: nfsvers=4.1
+    state: mounted
+
+- name: install the repo packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ repo_packages }}"
+
+- name: add the NGINX mainline repo
+  yum_repository:
+    name: "{{ nginx_repo.name }}"
+    description: "{{ nginx_repo.description }}"
+    baseurl: "{{ nginx_repo.baseurl }}"
+    gpgcheck: "{{ nginx_repo.gpgcheck }}"
+    enabled: "{{ nginx_repo.enabled }}"
+
+- name: install the stack packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ system_packages + stack_packages + extra_packages }}"
+
+- name: add the wordpress user
+  user: 
+    name: "{{ wordpress_system.user }}"
+    group: "{{ wordpress_system.group }}"
+    comment: "{{ wordpress_system.comment }}"
+    home: "{{ wordpress_system.home }}"
+    state: "{{ wordpress_system.state }}"
+
+- name: copy the nginx.conf to /etc/nginx/
+  template:
+    src: "nginx-nginx.conf.j2"
+    dest: "/etc/nginx/nginx.conf"
+  notify: "restart nginx"
+
+- name: create the global directory in /etc/nginx/
+  file:
+    dest: "/etc/nginx/global/"
+    state: "directory"
+    mode: "0644"
+
+- name: copy the restrictions.conf to /etc/nginx/global/
+  copy:
+    src: "nginx-global-restrictions.conf"
+    dest: "/etc/nginx/global/restrictions.conf"
+  notify: "restart nginx"
+
+- name: copy the wordpress_shared.conf to /etc/nginx/global/
+  template:
+    src: "nginx-global-wordpress_shared.conf.j2"
+    dest: "/etc/nginx/global/wordpress_shared.conf"
+  notify: "restart nginx"
+
+- name: copy the default.conf to /etc/nginx/conf.d/
+  template:
+    src: "nginx-confd-default.conf.j2"
+    dest: "/etc/nginx/conf.d/default.conf"
+  notify: "restart nginx"
+
+- name: copy the www.conf to /etc/php-fpm.d/
+  template:
+    src: "php-fpmd-www.conf.j2"
+    dest: "/etc/php-fpm.d/www.conf"
+  notify: "restart php-fpm"
+
+- name: configure php.ini
+  lineinfile: 
+    dest: "/etc/php.ini"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.replace }}"
+    backup: "yes"
+    backrefs: "yes"
+  with_items: "{{ php.ini }}"
+  notify: "restart php-fpm"
+
+- name: start php-fpm
+  service:
+    name: "php-fpm"
+    state: "started"
+
+- name: start nginx
+  service:
+    name: "nginx"
+    state: "started"
+
+- name: set the selinux allowing httpd_t to be permissive is required
+  selinux_permissive:
+    name: httpd_t
+    permissive: true
+  when: selinux.http_permissive == true

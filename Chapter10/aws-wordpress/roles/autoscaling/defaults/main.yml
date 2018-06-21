@@ -1,0 +1,10 @@
+---
+# defaults file for roles/autoscaling
+
+min_size: 2
+max_size: 9
+desired_capacity: 3
+replace_size: 2
+health_check_type: ELB
+assign_public_ip: yes
+ec2_instance_type: "t2.micro"

@@ -1,0 +1,16 @@
+---
+
+- hosts: jenkins
+  gather_facts: true
+  become: yes
+  become_method: sudo
+
+  vars:
+    java_packages: "java-1.8.0-openjdk"
+    jenkins_hostname: "10.20.30.60.nip.io"
+    jenkins_admin_username: "asnsible"
+    jenkins_admin_password: "Pa55w0rD"
+
+  roles:
+    - geerlingguy.java
+    - geerlingguy.jenkins

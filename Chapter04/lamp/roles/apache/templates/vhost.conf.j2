@@ -1,0 +1,10 @@
+# {{ ansible_managed }}
+<VirtualHost *:80>
+  ServerName {{ ansible_nodename }}
+  DocumentRoot {{ document_root }}
+  DirectoryIndex {{ index_file }}
+  <Directory {{ document_root }}>
+    AllowOverride All
+    Require all granted
+  </Directory>
+</VirtualHost>

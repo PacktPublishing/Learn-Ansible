@@ -1,0 +1,7 @@
+---
+# handlers file for roles/asp
+
+- name: restart iis
+  win_service:
+    name: w3svc
+    state: restarted

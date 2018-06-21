@@ -1,0 +1,10 @@
+---
+# defaults file for roles/ec2
+
+image:
+  base: "CentOS Linux 7 x86_64*"
+  owner: "679593333241"
+  root_device: "ebs"
+  architecture: "x86_64"
+wait_port: "22"
+ec2_instance_type: "t2.micro"

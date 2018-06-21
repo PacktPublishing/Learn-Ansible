@@ -1,0 +1,21 @@
+---
+# defaults file for roles/fix-ansible
+
+playbook_file:
+  remote: "/tmp/{{ inventory_hostname }}_ansible.yml"
+  local: "generated/{{ inventory_hostname }}_ansible.yml"
+  log: "generated/{{ inventory_hostname }}_ansible.log"
+
+ansible_fix_command: >
+  oscap xccdf generate fix
+    --profile {{ oscap.profile }}
+    --template urn:xccdf:fix:script:ansible
+    --output {{ playbook_file.remote }}
+    {{ report.results }}
+
+missing_folders:
+  - "/etc/dconf/db/local.d/locks/"
+
+missing_files:
+  - "/etc/dconf/db/local.d/locks/00-security-settings-lock"
+  - "/etc/sysconfig/prelink"

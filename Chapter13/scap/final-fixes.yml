@@ -1,0 +1,13 @@
+---
+
+- hosts: scap
+  gather_facts: true
+  become: yes
+  become_method: sudo
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - { role: final-fixes }
+    - { role: scan, report_name: "04-final-fixes" }

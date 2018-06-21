@@ -1,0 +1,163 @@
+---
+# tasks file for roles/aws
+
+- name: ensure that the VPC is present
+  ec2_vpc_net:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}"
+    state: present
+    cidr_block: "{{ vpc_cidr_block }}"
+    resource_tags: { "Name" : "{{ environment_name }}", "Environment" : "{{ environment_name }}" }
+  register: vpc_info
+
+- name: ensure that the subnets are present
+  ec2_vpc_subnet:
+    region: "{{ ec2_region }}"
+    state: present
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    cidr: "{{ item.subnet }}"
+    az: "{{ ec2_region }}{{ item.az }}"
+    resource_tags: 
+      "Name" : "{{ environment_name }}_{{ item.use }}_{{ ec2_region }}{{ item.az }}"
+      "Environment" : "{{ environment_name }}"
+      "Use" : "{{ item.use }}"
+  with_items: "{{ the_subnets }}"
+
+- name: gather information about the ec2 subnets
+  ec2_vpc_subnet_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      "tag:Use": "ec2"
+      "tag:Environment": "{{ environment_name }}"
+  register: subnets_ec2
+
+- name: register just the IDs for each of the subnets
+  set_fact:
+    subnet_ec2_ids: "{{ subnets_ec2.subnets | map(attribute='id') | list  }}"
+
+- name: find out your current public IP address using https://ipify.org/
+  ipify_facts:
+  register: public_ip
+
+- name: set your public ip as a fact
+  set_fact:
+    your_public_ip: "{{ public_ip.ansible_facts.ipify_public_ip }}/32"
+
+- name: provision ec2 security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    name: "{{ environment_name }}-ec2"
+    description: "Opens the RDP and WinRM ports to a trusted IP"
+    tags:
+      "Name": "{{ environment_name }}-ec2"
+      "Environment": "{{ environment_name }}"
+    rules:
+      - proto: "tcp"
+        from_port: "3389"
+        to_port: "3389"
+        cidr_ip: "{{ your_public_ip }}"
+        rule_desc: "allow {{ your_public_ip }} access to port RDP"
+      - proto: "tcp"
+        from_port: "5985"
+        to_port: "5985"
+        cidr_ip: "{{ your_public_ip }}"
+        rule_desc: "allow {{ your_public_ip }} access to WinRM"
+      - proto: "tcp"
+        from_port: "5986"
+        to_port: "5986"
+        cidr_ip: "{{ your_public_ip }}"
+        rule_desc: "allow {{ your_public_ip }} access to WinRM"
+  register: sg_ec2
+
+- name: ensure that there is an internet gateway
+  ec2_vpc_igw:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    state: present
+    tags:
+      "Name": "{{ environment_name }}_internet_gateway"
+      "Environment": "{{ environment_name }}"
+      "Use": "gateway"
+  register: igw_info
+
+- name: check that we can route through internet gateway
+  ec2_vpc_route_table:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    subnets: "{{ subnet_ec2_ids }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw_info.gateway_id }}"
+    resource_tags:
+      "Name": "{{ environment_name }}_outbound"
+      "Environment": "{{ environment_name }}"
+
+- name: search for all of the AMIs in the defined region which match our selection
+  ec2_ami_facts:
+    region: "{{ ec2_region }}"
+    owners: "{{ image.owner }}"
+    filters:
+      name: "{{ image.base }}"
+      architecture: "{{ image.architecture }}"
+      root-device-type: "{{ image.root_device }}"  
+  register: amiFind
+
+- name: filter the list of AMIs to find the latest one with an EBS backed volume
+  set_fact:
+    amiSortFilter: "{{ amiFind.images | sort(attribute='creation_date') | last }}"
+
+- name: finally grab AMI ID of the most recent result which matches our base image which is backed by an EBS volume
+  set_fact:
+    our_ami_id: "{{ amiSortFilter.image_id }}"
+
+- name: launch an instance
+  ec2_instance:
+    region: "{{ ec2_region }}"
+    state: "present"
+    instance_type: "{{ ec2.instance_type }}"
+    image_id: "{{ our_ami_id }}"
+    wait: yes
+    security_groups: [ "{{ sg_ec2.group_id }}" ]
+    network: 
+      assign_public_ip: true
+    filters:
+      instance-state-name: "running"
+      "tag:Name": "{{ environment_name }}"
+      "tag:environment": "{{ environment_name }}"
+    vpc_subnet_id: "{{ subnet_ec2_ids[0] }}"
+    user_data: "{{ lookup('template', 'userdata.j2') }}"
+    tags:
+      Name: "{{ environment_name }}"
+      environment: "{{ environment_name }}"
+
+- name: gather facts on the instance we just launched using the AWS API
+  ec2_instance_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      instance-state-name: "running"
+      "tag:Name": "{{ environment_name }}"
+      "tag:environment": "{{ environment_name }}"
+  register: singleinstance
+
+- name: add our temporary instance to a host group for use in the next step
+  add_host:
+    name: "{{ item.public_dns_name }}"
+    ansible_ssh_host: "{{ item.public_dns_name }}"
+    groups: "ec2_instance"
+  with_items: "{{ singleinstance.instances }}"
+
+- name: wait until WinRM is available before moving onto the next step
+  wait_for:
+    host: "{{ item.public_dns_name }}"
+    port: "{{ ec2.wait_port }}"
+    delay: 2
+    timeout: 320
+    state: "started"
+  with_items: "{{ singleinstance.instances }}"
+
+
+
+
+
+

@@ -1,0 +1,36 @@
+---
+
+- hosts: boxes
+  gather_facts: true
+  become: yes
+  become_method: sudo
+
+  vars:
+    ntp_servers:
+      - "0.centos.pool.ntp.org"
+      - "1.centos.pool.ntp.org"
+      - "2.centos.pool.ntp.org"
+      - "3.centos.pool.ntp.org"
+
+  handlers:
+    - name: "restart ntp"
+      service:
+        name: "ntpd"
+        state: "restarted"
+
+  tasks:
+    - debug:
+        msg: "I am connecting to {{ ansible_nodename }} which is running {{ ansible_distribution }} {{ ansible_distribution_version }}"
+    - yum:
+        name: "*"
+        state: "latest"
+    - yum:
+        name: "{{ item }}"
+        state: "installed"
+      with_items:
+        - "ntp"
+        - "ntpdate"
+    - template:
+        src: "./ntp.conf.j2"
+        dest: "/etc/ntp.conf"
+      notify: "restart ntp"

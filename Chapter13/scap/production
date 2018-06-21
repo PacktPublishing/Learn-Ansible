@@ -1,0 +1,10 @@
+box1 ansible_host=10.20.30.40.nip.io
+
+[scap]
+box1
+
+[scap:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_private_key_file=~/.ssh/id_rsa
+host_key_checking=False

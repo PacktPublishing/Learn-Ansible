@@ -1,0 +1,12 @@
+box1 ansible_host=localhost
+
+[windows]
+box1
+
+[windows:vars]
+ansible_connection=winrm
+ansible_user=vagrant
+ansible_password=vagrant
+ansible_port=55985
+ansible_winrm_scheme=http
+ansible_winrm_server_cert_validation=ignore

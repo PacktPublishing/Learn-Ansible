@@ -1,0 +1,167 @@
+---
+# tasks file for roles/remove
+
+- name: remove the auto-scaling group
+  ec2_asg:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-asg"
+    state: absent
+    wait_for_instances: "yes"
+    wait_timeout: "900"
+
+- name: wait for 2 minutes before continuing
+  pause:
+    minutes: 2
+
+- name: remove the efs shares
+  efs:
+    region: "{{ ec2_region }}"
+    state: absent
+    name: "{{ environment_name }}-efs"
+    wait: "{{ wait.wait }}"
+    wait_timeout: "{{ wait.wait_time }}"
+
+- name: terminate the rds instance
+  rds:
+    region: "{{ ec2_region }}"
+    command: "delete"
+    instance_name: "{{ environment_name }}-rds"
+    wait: "{{ wait.wait }}"
+    wait_timeout: "{{ wait.wait_time }}"
+
+- name: wait for 2 minutes before continuing
+  pause:
+    minutes: 2
+
+- name: remove RDS subnet group
+  rds_subnet_group:
+    region: "{{ ec2_region }}"
+    state: absent
+    name: "{{ environment_name }}_rds_group"
+
+- name: terminate the application elastic load balancer
+  elb_application_lb:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-elb"
+    state: "absent"
+
+- name: prompt
+  pause:
+    prompt: "Make sure the elastic load balancer has been terminated before proceeding"
+
+- name: remove the target group
+  elb_target_group:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-target-group"
+    state: "absent"
+
+- name: remove the efs security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-efs"
+    state: "absent"
+
+- name: wait for 30 seconds before continuing
+  pause:
+    seconds: 30
+
+- name: remove the rds security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-rds"
+    state: "absent"
+
+- name: wait for 30 seconds before continuing
+  pause:
+    seconds: 30
+
+- name: remove the ec2 security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-ec2"
+    state: "absent"
+
+- name: wait for 30 seconds before continuing
+  pause:
+    seconds: 30
+
+- name: remove the elb security group
+  ec2_group:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-elb"
+    state: "absent"
+
+- name: wait for 30 seconds before continuing
+  pause:
+    seconds: 30
+
+- name: get some facts on the route table
+  ec2_vpc_route_table_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      "tag:Name": "{{ environment_name }}_outbound"
+      "tag:Environment": "{{ environment_name }}"
+  register: route_table_facts
+
+- name: remove the route table
+  ec2_vpc_route_table:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ route_table_facts.route_tables[0].vpc_id }}"
+    route_table_id: "{{ route_table_facts.route_tables[0].id }}"
+    lookup: "id"
+    state: "absent"
+  ignore_errors: yes
+
+- name: get some facts on the vpc
+  ec2_vpc_net_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      "tag:Name": "{{ environment_name }}"
+      "tag:Environment": "{{ environment_name }}"
+  register: vpc_facts
+
+- name: ensure that there isn't an internet gateway
+  ec2_vpc_igw:
+    region: "{{ ec2_region }}"
+    state: "absent"
+    vpc_id: "{{ vpc_facts.vpcs[0].vpc_id }}"
+    tags:
+      "Name": "{{ environment_name }}_internet_gateway"
+      "Environment": "{{ environment_name }}"
+  ignore_errors: yes
+
+- name: gather information about the subnets
+  ec2_vpc_subnet_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      "tag:Environment": "{{ environment_name }}"
+  register: the_subnets
+
+- name: ensure that the subnets are absent
+  ec2_vpc_subnet:
+    region: "{{ ec2_region }}"
+    state: "absent"
+    vpc_id: "{{ vpc_facts.vpcs[0].vpc_id }}"
+    cidr: "{{ item.cidr_block }}"
+  with_items: "{{ the_subnets.subnets }}"
+
+- name: ensure that the VPC is absent
+  ec2_vpc_net:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}"
+    state: "absent"
+    cidr_block: "{{ vpc_cidr_block }}"
+
+- name: search through all of our AMIs
+  ec2_ami_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      name: "{{ environment_name }}-*"
+  register: amiFind
+
+- name: unregister all of our AMIs
+  ec2_ami:
+    image_id: "{{ item.image_id }}"
+    delete_snapshot: True
+    state: absent
+  with_items: "{{ amiFind.images }}"

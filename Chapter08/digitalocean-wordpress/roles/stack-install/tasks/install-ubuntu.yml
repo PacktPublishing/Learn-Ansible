@@ -1,0 +1,38 @@
+---
+
+# Enabled the repos needed to install our software stack
+##################################################################################################
+
+- name: update cache and install the system packages
+  apt:
+    name: "{{ item }}"
+    update_cache: "yes"
+  with_items: "{{ system_packages }}"
+
+- name: add the apt keys from a key server
+  apt_key:
+    keyserver: "{{ item.key_server }}"
+    id: "{{ item.key }}"
+  with_items: "{{ repo_keys }}"
+
+- name: add the apt keys from a URL
+  apt_key:
+    url: "{{ item }}"
+    state: present
+  with_items: "{{ repo_keys_url }}"
+
+- name: install the repo packages
+  apt_repository:
+    repo: "{{ item }}"
+    state: "present"
+    update_cache: "yes"
+  with_items: "{{ repo_packages }}"
+
+# Install the packages we require for our stack
+##################################################################################################
+
+- name: install the stack packages
+  apt:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ stack_packages + extra_packages }}"

@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+API_VERSION = "2"
+BOX_NAME    = "centos/7"
+BOX_IP_SCAN = "10.20.30.40"
+BOX_IP_WP   = "10.20.30.41"
+DOMAIN      = "nip.io"
+PRIVATE_KEY = "~/.ssh/id_rsa"
+PUBLIC_KEY  = '~/.ssh/id_rsa.pub'
+
+Vagrant.configure(API_VERSION) do |config|
+
+  config.vm.define :scan do |scan|  
+    scan.vm.box = BOX_NAME
+    scan.vm.network "private_network", ip: BOX_IP_SCAN
+    scan.vm.host_name = BOX_IP_SCAN + '.' + DOMAIN
+    scan.ssh.insert_key = false
+    scan.ssh.private_key_path = [PRIVATE_KEY, "~/.vagrant.d/insecure_private_key"]
+    scan.vm.provision "file", source: PUBLIC_KEY, destination: "~/.ssh/authorized_keys"
+  end
+
+  config.vm.define :wp do |wp|  
+    wp.vm.box = BOX_NAME
+    wp.vm.network "private_network", ip: BOX_IP_WP
+    wp.vm.host_name = BOX_IP_WP + '.' + DOMAIN
+    wp.ssh.insert_key = false
+    wp.ssh.private_key_path = [PRIVATE_KEY, "~/.vagrant.d/insecure_private_key"]
+    wp.vm.provision "file", source: PUBLIC_KEY, destination: "~/.ssh/authorized_keys"
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = "2024"
+    v.cpus = "2"
+  end
+
+  config.vm.provider "vmware_fusion" do |v|
+    v.vmx["memsize"] = "2024"
+    v.vmx["numvcpus"] = "2"
+  end
+
+end

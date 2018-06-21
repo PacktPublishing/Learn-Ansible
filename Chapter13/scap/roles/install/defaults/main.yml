@@ -1,0 +1,7 @@
+---
+# defaults file for roles/install
+
+install:
+  packages:
+    - "openscap-scanner"
+    - "scap-security-guide"

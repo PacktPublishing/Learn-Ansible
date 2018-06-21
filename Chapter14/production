@@ -1,0 +1,18 @@
+box1 ansible_host=10.20.30.40.nip.io
+box2 ansible_host=10.20.30.41.nip.io
+
+[scan]
+box1
+
+[wordpress]
+box2
+
+[boxes]
+box1
+box2
+
+[boxes:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_private_key_file=~/.ssh/id_rsa
+host_key_checking=False

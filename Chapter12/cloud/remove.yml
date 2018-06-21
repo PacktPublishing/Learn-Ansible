@@ -1,0 +1,12 @@
+---
+
+- name: Terminate everything in our AWS enviroment
+  hosts: localhost
+  connection: local
+  gather_facts: True
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - roles/remove

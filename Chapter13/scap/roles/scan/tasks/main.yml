@@ -1,0 +1,14 @@
+---
+# tasks file for roles/scan
+
+- name: run the openscap scan
+  command: "{{ scan_command }}"
+  args:
+    creates: "{{ report.report_remote_path }}"
+  ignore_errors: yes
+
+- name: download the html report
+  fetch:
+    src: "{{ report.report_remote_path }}"
+    dest: "{{ report.report_local_path  }}"
+    flat: yes

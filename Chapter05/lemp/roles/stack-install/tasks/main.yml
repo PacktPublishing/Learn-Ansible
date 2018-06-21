@@ -1,0 +1,40 @@
+---
+# tasks file for roles/stack-install
+
+# Enabled the repos needed to install our software stack
+##################################################################################################
+
+- name: install the repo packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ repo_packages }}"
+
+- name: add the NGINX mainline repo
+  yum_repository:
+    name: "{{ nginx_repo.name }}"
+    description: "{{ nginx_repo.description }}"
+    baseurl: "{{ nginx_repo.baseurl }}"
+    gpgcheck: "{{ nginx_repo.gpgcheck }}"
+    enabled: "{{ nginx_repo.enabled }}"
+
+- name: update all of the installed packages
+  yum:
+    name: "*"
+    state: "latest"
+    update_cache: "yes"
+
+# Install the packages we require for our stack
+##################################################################################################
+
+- name: remove the packages so that they can be replaced
+  yum:
+    name: "{{ item }}"
+    state: "absent"
+  with_items: "{{ packages_remove }}"
+
+- name: install the stack packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+  with_items: "{{ system_packages + stack_packages + extra_packages }}"

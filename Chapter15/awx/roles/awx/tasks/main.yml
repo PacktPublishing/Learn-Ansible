@@ -1,0 +1,33 @@
+---
+# tasks file for roles/awx
+
+- name: install the awx packages
+  yum:
+    name: "{{ item }}"
+    state: "installed"
+    update_cache: "yes"
+  with_items: "{{ awx.packages }}"
+
+- name: install the python packages
+  pip:
+    name: "{{ item }}"
+  with_items: "{{ awx.pip }}"
+
+- name: check out the awx repo
+  git:
+    repo: "{{ awx.repo_url }}"
+    dest: "{{ awx.repo_path }}"
+    clone: "yes"
+    update: "yes"
+
+- name: check out the awx logos repo
+  git:
+    repo: "{{ awx.logo_url }}"
+    dest: "{{ awx.repo_path }}"
+    clone: "yes"
+    update: "yes"
+
+- name: install awx
+  command: "{{ awx.install_command }}"
+  args:
+    chdir: "{{ awx.repo_path }}installer"

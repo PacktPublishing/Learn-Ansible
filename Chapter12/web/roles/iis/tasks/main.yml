@@ -1,0 +1,14 @@
+---
+# tasks file for web/roles/iis
+
+- name: enable IIS
+  win_feature:
+    name: 
+      - "Web-Server"
+      - "Web-Common-Http"
+    state: "present"
+
+- name: create an html file from a template
+  win_template:
+    src: "index.html.j2"
+    dest: "{{ document_root }}{{ html_file }}"

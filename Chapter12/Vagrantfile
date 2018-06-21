@@ -1,0 +1,30 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+API_VERSION  = "2"
+BOX_NAME     = "StefanScherer/windows_2016"
+COMMUNICATOR = "winrm"
+USERNAME     = "vagrant"
+PASSWORD     = "vagrant"
+
+Vagrant.configure(API_VERSION) do |config|
+  config.vm.define "vagrant-windows-2016"
+  config.vm.box = BOX_NAME
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.communicator = COMMUNICATOR
+  config.winrm.username = USERNAME
+  config.winrm.password = PASSWORD
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = "4048"
+    v.cpus = "4"
+    v.gui = true
+  end
+
+  config.vm.provider "vmware_fusion" do |v|
+    v.vmx["memsize"] = "4048"
+    v.vmx["numvcpus"] = "4"
+  end
+
+end

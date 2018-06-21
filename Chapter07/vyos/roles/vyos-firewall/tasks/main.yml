@@ -1,0 +1,36 @@
+---
+# tasks file for roles/vyos-firewall
+
+- name: set the hostname correctly
+  vyos_config:
+    provider:
+      host: "{{ vyos.host }}"
+      username: "{{ vyos.username }}"
+    lines:
+      - "set system host-name {{ vyos.host }}"
+
+- name: configure name servers
+  vyos_system:
+    provider:
+      host: "{{ vyos.host }}"
+      username: "{{ vyos.username }}"
+    name_server: "{{ item }}"
+  with_items: "{{ vyos_nameservers }}"
+
+- name: configure the motd
+  vyos_banner:
+    provider:
+      host: "{{ vyos.host }}"
+      username: "{{ vyos.username }}"
+    banner: "post-login"
+    state: "present"
+    text: "{{ motd_asciiart }}"
+
+- name: backup and load from file
+  vyos_config:
+    provider:
+      host: "{{ vyos.host }}"
+      username: "{{ vyos.username }}"
+    src: "firewall.j2"
+    backup: "{{ vyos.backup }}"
+    save: "yes"

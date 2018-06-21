@@ -1,0 +1,7 @@
+---
+# handlers file for roles/common
+
+- name: "restart ntp"
+  service:
+    name: "ntpd"
+    state: "restarted"

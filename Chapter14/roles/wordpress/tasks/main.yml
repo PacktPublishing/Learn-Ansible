@@ -1,0 +1,154 @@
+---
+# tasks file for roles/wordpress
+
+# Download WP-CLI and set permissions.
+##################################################################################################
+
+- name: download wp-cli
+  get_url:
+    url: "{{ wp_cli.download }}"
+    dest: "{{ wp_cli.path }}"
+
+- name: update permissions of wp-cli to allow anyone to execute it
+  file:
+    path: "{{ wp_cli.path }}"
+    mode: "0755"
+
+# Create the WordPress database and user
+##################################################################################################
+
+- name: create the wordpress database
+  mysql_db:
+    db: "{{ wp_database.name }}" 
+    state: "present"
+
+- name: create the user for the wordpress database
+  mysql_user:
+    name: "{{ wp_database.username }}"
+    password: "{{ wp_database.password }}"
+    priv: "{{ wp_database.name }}.*:ALL"
+    state: "present"
+  with_items: "{{ mariadb.hosts }}"
+
+# Download WordPress
+##################################################################################################
+
+- name: are the wordpress files already there?
+  stat:
+    path: "{{ wordpress_system.home }}/index.php"
+  register: wp_installed
+
+- name: download wordpresss
+  shell: "{{ wp_cli.path }} core download"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_installed.stat.exists == False
+
+- name: set the correct permissions on the homedir
+  file:
+    path: "{{ wordpress_system.home }}"
+    mode: "0755"
+  when: wp_installed.stat.exists == False
+
+# Configure WordPress
+##################################################################################################
+
+- name: is wordpress already configured?
+  stat:
+    path: "{{ wordpress_system.home }}/wp-config.php"
+  register: wp_configured
+
+- name: configure wordpress
+  shell: "{{ wp_cli.path }} core config --dbhost={{ mariadb.bind }} --dbname={{ wp_database.name }} --dbuser={{ wp_database.username }} --dbpass={{ wp_database.password }}"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_configured.stat.exists == False
+
+# Install WordPress
+##################################################################################################
+
+- name: do we need to install wordpress?
+  shell: "{{ wp_cli.path }} core is-installed"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  ignore_errors: yes
+  register: wp_installed
+
+- name: install wordpress if needed
+  shell: "{{ wp_cli.path }} core install --url='{{ wordpress.domain }}' --title='{{ wordpress.title }}' --admin_user={{ wordpress.username }} --admin_password={{ wordpress.password }} --admin_email={{ wordpress.email }}"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_installed.rc == 1
+
+# Install Plugins
+##################################################################################################
+
+- name: do we need to install the plugins?
+  shell: "{{ wp_cli.path }} plugin is-installed {{ item }}"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  with_items: "{{ wordpress.plugins }}"
+  ignore_errors: yes
+  register: wp_plugin_installed
+
+- name: set a fact if we don't need to install the plugins
+  set_fact:
+    wp_plugin_installed_skip: true
+  when: wp_plugin_installed.failed is undefined
+
+- name: set a fact if we need to install the plugins
+  set_fact:
+    wp_plugin_installed_skip: false
+  when: wp_plugin_installed.failed is defined
+
+- name: install the plugins if we need to or ignore if not
+  shell: "{{ wp_cli.path }} plugin install {{ item }} --activate"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  with_items: "{{ wordpress.plugins }}"
+  when: wp_plugin_installed_skip == false
+
+# Install Theme
+##################################################################################################
+
+- name: do we need to install the theme?
+  shell: "{{ wp_cli.path }} theme is-installed {{ wordpress.theme }}"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  ignore_errors: yes
+  register: wp_theme_installed
+
+- name: set a fact if we don't need to install the theme
+  set_fact:
+    wp_theme_installed_skip: true
+  when: wp_theme_installed.failed == false
+
+- name: set a fact if we need to install the theme
+  set_fact:
+    wp_theme_installed_skip: false
+  when: wp_theme_installed.failed == true
+
+- name: install the theme if we need to or ignore if not
+  shell: "{{ wp_cli.path }} theme install {{ wordpress.theme }} --activate"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_theme_installed_skip == false
+
+
+

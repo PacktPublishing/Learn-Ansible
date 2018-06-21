@@ -1,0 +1,17 @@
+---
+
+- hosts: scap
+  gather_facts: true
+  become: yes
+  become_method: sudo
+
+  vars_files:
+    - group_vars/common.yml
+
+  roles:
+    - { role: install, tags: [ "scan" ] }
+    - { role: scan, tags: [ "scan" ], report_name: "01-initial-scan" }
+    - { role: fix-ansible, report_name: "01-initial-scan" }
+    - { role: scan, report_name: "02-post-ansible-fix" }
+    - { role: fix-bash, report_name: "02-post-ansible-fix" }
+    - { role: scan, report_name: "03-post-bash-fix" }

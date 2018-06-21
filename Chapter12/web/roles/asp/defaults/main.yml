@@ -1,0 +1,12 @@
+---
+# defaults file for roles/asp
+
+aspx_document_root: 'C:\inetpub\wwwroot\ansible\'
+aspx_file: default.aspx
+
+aspx_heading: "Success !!!"
+aspx_body: |
+  This HTML page has been deployed using Ansible to a <b>{{ ansible_distribution }}</b> host.<br><br>
+  The weboot is <b>{{ aspx_document_root }}</b> this file is called <b>{{ aspx_file }}</b>.<br><br>
+  The output below is from ASP.NET<br><br>
+  Hello from <%= Environment.MachineName %> at <%= DateTime.UtcNow %><br><br>

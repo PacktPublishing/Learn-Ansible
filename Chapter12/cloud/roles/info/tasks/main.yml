@@ -1,0 +1,6 @@
+---
+# tasks file for roles/info
+
+- name: print out informaton on the host
+  debug:
+    msg: "You can connect to '{{ inventory_hostname }}' using the username of '{{ ansible.username }}' with a password of '{{ ansible.password }}'."

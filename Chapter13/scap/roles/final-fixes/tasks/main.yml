@@ -1,0 +1,26 @@
+---
+# tasks file for role/final-fixes
+
+- name: sort out the logrotate
+  lineinfile:
+    path: "/etc/logrotate.conf"
+    regexp: "^weekly"
+    line: "daily"
+
+- name: add the missing line to the modules.rules
+  lineinfile:
+    path: "/etc/audit/rules.d/modules.rules"
+    line: "-a always,exit -F arch=b32 -S init_module -S delete_module -k modules"
+
+- name: add file for content_rule_file_permissions_var_log_audit
+  file:
+    path: "/var/log/audit/audit.log.fix"
+    state: "touch"
+
+- name: copy the content_rule_file_permissions_var_log_audit.sh script
+  copy:
+    src: "content_rule_file_permissions_var_log_audit.sh"
+    dest: "/tmp/content_rule_file_permissions_var_log_audit.sh"
+
+- name: run the content_rule_file_permissions_var_log_audit.sh script 
+  command: "bash /tmp/content_rule_file_permissions_var_log_audit.sh"

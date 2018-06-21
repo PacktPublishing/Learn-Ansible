@@ -1,0 +1,18 @@
+---
+# defaults file for roles/aws
+
+vpc_cidr_block: "10.0.0.0/16"
+the_subnets:
+  - { use: 'ec2', az: 'a', subnet: '10.0.10.0/24' }
+
+ec2:
+  instance_type: "t2.large"
+  wait_port: "5986"
+
+image:
+  base: Windows_Server-2016-English-Full-Base-*
+  owner: amazon
+  architecture: x86_64
+  root_device: ebs
+
+win_initial_password: "{{ lookup('password', 'group_vars/generated_administrator chars=ascii_letters,digits length=30') }}"

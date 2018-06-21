@@ -1,0 +1,13 @@
+---
+# defaults file for digitalocean/roles/droplet
+
+key:
+  name: "Ansible"
+  path: "~/.ssh/id_rsa.pub"
+
+droplet:
+  name: "AnsibleDroplet"
+  region: "lon1"
+  size: "s-1vcpu-2gb"
+  image: "centos-7-x64"
+  timeout: "500"

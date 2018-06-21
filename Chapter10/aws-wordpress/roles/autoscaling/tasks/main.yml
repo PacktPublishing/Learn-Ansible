@@ -1,0 +1,69 @@
+---
+# tasks file for roles/autoscaling
+
+- name: search through all of our AMIs
+  ec2_ami_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      name: "{{ environment_name }}-*"
+  register: amiFind
+
+- name: find the last one we built
+  set_fact:
+    amiSortFilter: "{{ amiFind.images | sort(attribute='creation_date') | last }}"
+
+- name: grab AMI ID and name of the most recent result
+  set_fact:
+    our_ami_id: "{{ amiSortFilter.image_id }}"
+    our_ami_name: "{{ amiSortFilter.name }}"
+
+- name: create the launch configuration
+  ec2_lc:
+    region: "{{ ec2_region }}"
+    name: "{{ our_ami_name }}"
+    state: present
+    image_id: "{{ our_ami_id }}"
+    security_groups: [ "{{ sg_ec2.group_id }}" ]
+    assign_public_ip: "{{ assign_public_ip }}"
+    instance_type: "{{ ec2_instance_type }}"
+    volumes:
+    - device_name: /dev/xvda
+      volume_size: 10
+      volume_type: gp2
+      delete_on_termination: true
+
+- name: find out the target group ARN
+  elb_target_group_facts:
+    region: "{{ ec2_region }}"
+    names:
+      - "{{ environment_name }}-target-group"
+  register: elb_target_group
+
+- name: create / update the auto-scaling group using the launch configuration we just created
+  ec2_asg:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-asg"
+    target_group_arns: [ "{{ elb_target_group.target_groups[0].target_group_arn }}" ]
+    launch_config_name: "{{ our_ami_name }}"
+    min_size: "{{ min_size }}"
+    max_size: "{{ max_size }}"
+    desired_capacity: "{{ desired_capacity }}"
+    health_check_period: 300
+    health_check_type: "{{ health_check_type }}"
+    replace_all_instances: yes
+    replace_batch_size: "{{ replace_size }}"
+    vpc_zone_identifier: "{{ subnet_ec2_ids }}"
+    wait_for_instances: "yes"
+    wait_timeout: "900"
+    tags:
+      - Name: "{{ environment_name }}-ec2"
+      - environment: "{{ environment_name }}"
+
+- name: remove any tmp instances which are running
+  ec2_instance:
+    region: "{{ ec2_region }}"
+    state: absent
+    filters:
+      instance-state-name: "running"
+      "tag:environment": "{{ environment_name }}"
+      "tag:Name": "{{ environment_name }}-tmp"

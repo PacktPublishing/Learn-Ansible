@@ -1,0 +1,12 @@
+---
+# defaults file for roles/fix-bash
+
+bash_file:
+  remote: "/tmp/{{ inventory_hostname }}_bash.sh"
+  log: "generated/{{ inventory_hostname }}_bash.log"
+
+bash_fix_command: >
+  oscap xccdf generate fix
+    --profile {{ oscap.profile }}
+    --output {{ bash_file.remote }}
+    {{ report.results }}

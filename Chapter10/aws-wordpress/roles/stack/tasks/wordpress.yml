@@ -1,0 +1,78 @@
+---
+# tasks file for roles/wordpress
+
+- name: find some information on the rds instance
+  local_action:
+    module: rds
+    region: "{{ ec2_region }}"
+    command: facts
+    instance_name: "{{ environment_name }}-rds"
+  become: no
+  register: rds_results
+
+- name: find some information on the elastic load balancer
+  local_action:
+    module: elb_application_lb_facts
+    region: "{{ ec2_region }}"
+    names: "{{ environment_name }}-elb"
+  become: no
+  register: elb_results
+
+- name: download wp-cli
+  get_url:
+    url: "{{ wp_cli.download }}"
+    dest: "{{ wp_cli.path }}"
+
+- name: update permissions of wp-cli to allow anyone to execute it
+  file:
+    path: "{{ wp_cli.path }}"
+    mode: "0755"
+
+- name: are the wordpress files already there?
+  stat:
+    path: "{{ wordpress_system.home }}/index.php"
+  register: wp_installed
+
+- name: download wordpresss
+  shell: "{{ wp_cli.path }} core download"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_installed.stat.exists == False
+
+- name: set the correct permissions on the homedir
+  file:
+    path: "{{ wordpress_system.home }}"
+    mode: "0775"
+  when: wp_installed.stat.exists == False
+
+- name: is wordpress already configured?
+  stat:
+    path: "{{ wordpress_system.home }}/wp-config.php"
+  register: wp_configured
+
+- name: configure wordpress
+  shell: "{{ wp_cli.path }} core config --dbhost={{ rds_results.instance.endpoint }} --dbname={{ environment_name }} --dbuser={{ environment_name }} --dbpass={{ lookup('password', 'group_vars/rds_passwordfile chars=ascii_letters,digits length=30') }}"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_configured.stat.exists == False
+
+- name: do we need to install wordpress?
+  shell: "{{ wp_cli.path }} core is-installed"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  ignore_errors: yes
+  register: wp_installed
+
+- name: install wordpress if needed
+  shell: "{{ wp_cli.path }} core install --url='{{ wordpress.domain }}' --title='{{ wordpress.title }}' --admin_user={{ wordpress.username }} --admin_password={{ wordpress.password }} --admin_email={{ wordpress.email }}"
+  args:
+    chdir: "{{ wordpress_system.home }}"
+  become_user: "{{ wordpress_system.user }}"
+  become: true
+  when: wp_installed.rc == 1

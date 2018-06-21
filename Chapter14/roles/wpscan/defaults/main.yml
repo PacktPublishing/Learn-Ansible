@@ -1,0 +1,8 @@
+---
+# defaults file for roles/wpscan
+
+image: "wpscanteam/wpscan"
+log:
+  remote_folder: /tmp/wpscan/
+  local_folder: "generated/"
+  file: "{{ ansible_date_time.date }}-{{ ansible_date_time.hour }}-{{ ansible_date_time.minute }}.txt"

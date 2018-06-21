@@ -1,0 +1,32 @@
+---
+# tasks file for roles/elb
+
+- name: provision the target group
+  elb_target_group:
+    name: "{{ environment_name }}-target-group"
+    region: "{{ ec2_region }}"
+    protocol: "http"
+    port: "80"
+    deregistration_delay_timeout: "15"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    state: "present"
+    modify_targets: "false"
+
+- name: provision an application elastic load balancer
+  elb_application_lb:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-elb"
+    security_groups: "{{ sg_elb.group_id }}"
+    subnets: "{{ subnet_elb_ids }}"
+    listeners:
+      - Protocol: "HTTP" 
+        Port: "80"
+        DefaultActions:
+          - Type: "forward" 
+            TargetGroupName: "{{ environment_name }}-target-group"
+    state: present
+  register: loadbalancer
+
+# - name: print the information on the load balancer we have registered
+#   debug:
+#     msg: "{{ loadbalancer }}"

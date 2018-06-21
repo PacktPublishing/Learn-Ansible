@@ -1,0 +1,28 @@
+---
+
+- name: Sort out the wrong IP address in the /etc/sysconfig/network file on the vms
+  vmware_vm_shell:
+    hostname: "{{vcenter.host}}"
+    username: "{{ vcenter.username }}"
+    password: "{{ vcenter.password }}"
+    validate_certs: no
+    vm_id: "{{  item.machine_name | upper }}"
+    vm_username: "{{ vm_shell.username }}"
+    vm_password: "{{ vm_shell.password }}"
+    vm_shell: "{{ vm_shell.cmd }}"
+    vm_shell_args: " {{ vm_shell.args }} "
+    vm_shell_cwd: "{{ vm_shell.cwd }}"
+  with_items: "{{ vm }}"
+
+- name: Restart networking on all VMs
+  vmware_vm_shell:
+    hostname: "{{vcenter.host}}"
+    username: "{{ vcenter.username }}"
+    password: "{{ vcenter.password }}"
+    validate_certs: no
+    vm_id: "{{  item.machine_name | upper }}"
+    vm_username: "{{ vm_shell.username }}"
+    vm_password: "{{ vm_shell.password }}"
+    vm_shell: "/sbin/service"
+    vm_shell_args: "network restart"
+  with_items: "{{ vm }}"

@@ -1,0 +1,12 @@
+---
+
+- hosts: localhost
+
+  vars_files:
+    - secrets.yml
+
+  tasks:
+    - debug:
+        msg: "The username is {{ username }} and password is {{ password }}, also the API key is {{ secretapikey }}"
+    - debug:
+        msg: "I am going to install {{ packages }}"

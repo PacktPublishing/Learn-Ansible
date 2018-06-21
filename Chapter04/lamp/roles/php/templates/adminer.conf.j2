@@ -1,0 +1,7 @@
+# {{ ansible_managed }}
+Alias /adminer "{{ adminer.path }}"
+  <Directory "{{ adminer.path }}">
+    DirectoryIndex index.php
+    AllowOverride All
+    Require all granted
+  </Directory>

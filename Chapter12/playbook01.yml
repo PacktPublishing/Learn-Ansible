@@ -1,0 +1,8 @@
+---
+
+- hosts: windows
+  gather_facts: true
+
+  tasks:
+    - debug:
+        msg: "I am connecting to {{ ansible_nodename }} which is running {{ ansible_distribution }} {{ ansible_distribution_version }}"

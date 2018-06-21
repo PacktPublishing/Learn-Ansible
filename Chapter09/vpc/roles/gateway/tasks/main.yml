@@ -1,0 +1,29 @@
+---
+# tasks file for roles/gateway
+
+- name: ensure that there is an internet gateway
+  ec2_vpc_igw:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    state: present
+    tags:
+      "Name": "{{ environment_name }}_internet_gateway"
+      "Environment": "{{ environment_name }}"
+      "Use": "gateway"
+  register: igw_info
+
+# - name: print the information we have registered
+#   debug:
+#     msg: "{{ igw_info }}"
+
+- name: check that we can route through internet gateway
+  ec2_vpc_route_table:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    subnets: "{{ subnet_ec2_ids + subnet_elb_ids }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw_info.gateway_id }}"
+    resource_tags:
+      "Name": "{{ environment_name }}_outbound"
+      "Environment": "{{ environment_name }}"

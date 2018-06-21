@@ -1,0 +1,30 @@
+---
+# tasks file for roles/ec2
+
+- name: gather facts on any already running instances
+  ec2_instance_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      instance-state-name: "running"
+      "tag:environment": "{{ environment_name }}"
+      "tag:Name": "{{ environment_name }}-ec2"
+  register: running_instances
+
+- name: add any already running instances to a group
+  add_host:
+    name: "{{ item.public_dns_name }}"
+    ansible_ssh_host: "{{ item.public_dns_name }}"
+    groups: "already_running"
+  with_items: "{{ running_instances.instances }}"
+
+- name: set the number of already running instances as a fact
+  set_fact:
+    number_of_running_hosts: "{{ groups['already_running'] | length | default(0) }}"
+
+- name: run the tasks for a new deployment 
+  include_tasks: "new_deployment.yml"
+  when: number_of_running_hosts|int == 0
+
+- name: run the tasks for an existing deployment 
+  include_tasks: "existing_deployment.yml"
+  when: number_of_running_hosts|int >= 1

@@ -1,0 +1,12 @@
+centos ansible_host=10.20.30.10.nip.io 
+ubuntu ansible_host=10.20.30.20.nip.io ansible_python_interpreter=/usr/bin/python3
+
+[docker]
+centos
+ubuntu
+
+[docker:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_private_key_file=~/.ssh/id_rsa
+host_key_checking=False

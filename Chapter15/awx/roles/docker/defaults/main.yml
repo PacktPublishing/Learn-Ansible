@@ -1,0 +1,15 @@
+---
+# defaults file for roles/docker
+
+docker:
+  gpg_key: "https://download.docker.com/linux/centos/gpg"
+  repo_url: "https://download.docker.com/linux/centos/docker-ce.repo"
+  repo_path: "/etc/yum.repos.d/docker-ce.repo"
+  packages:
+    - "docker-ce"
+    - "device-mapper-persistent-data"
+    - "lvm2"
+    - "python-setuptools"
+    - "libselinux-python"
+  pip:
+    - "docker"

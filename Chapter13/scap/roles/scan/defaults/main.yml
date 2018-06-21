@@ -1,0 +1,9 @@
+---
+# defaults file for roles/scan
+
+scan_command: >
+  oscap xccdf eval --profile {{ oscap.profile }}
+    --fetch-remote-resources
+    --results-arf {{ report.results }}
+    --report {{ report.report_remote_path }}
+    {{ oscap.policy_path }}{{ oscap.policy }}

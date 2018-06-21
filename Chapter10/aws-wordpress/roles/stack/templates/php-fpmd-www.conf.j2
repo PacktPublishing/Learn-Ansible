@@ -1,0 +1,17 @@
+; {{ ansible_managed }}
+
+[{{ wordpress_system.user }}]
+user = {{ wordpress_system.user }}
+group = {{ wordpress_system.group }}
+listen = {{ php.ip }}:{{ php.port }}
+listen.allowed_clients = {{ php.ip }}
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
+php_admin_value[error_log] = /var/log/php-fpm/{{ wordpress_system.user }}-error.log
+php_admin_flag[log_errors] = on
+php_value[session.save_handler] = files
+php_value[session.save_path]    = /var/lib/php/fpm/session
+php_value[soap.wsdl_cache_dir]  = /var/lib/php/fpm/wsdlcache

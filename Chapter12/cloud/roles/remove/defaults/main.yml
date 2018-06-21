@@ -1,0 +1,8 @@
+---
+# defaults file for roles/remove
+
+wait:
+  wait: "yes"
+  wait_time: "1200"
+
+vpc_cidr_block: "10.0.0.0/16"

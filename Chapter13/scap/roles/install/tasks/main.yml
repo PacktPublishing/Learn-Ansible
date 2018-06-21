@@ -1,0 +1,14 @@
+---
+# tasks file for roles/install
+
+- name: update all of the installed packages
+  yum:
+    name: "*"
+    state: "latest"
+    update_cache: "yes"
+
+- name: install the packages needed
+  package:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ install.packages }}"

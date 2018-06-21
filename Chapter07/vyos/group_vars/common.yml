@@ -1,0 +1,17 @@
+---
+
+vyos:
+  host: "192.168.50.10.nip.io"
+  username: "vagrant"
+  backup: "yes"
+  inside:
+    interface: "172.16.20.1/24"
+    subnet: "172.16.20.0/24"
+
+whitelist_ips:
+  - 172.16.20.2
+
+rules:
+    - { action: 'set', source_address: '0.0.0.0/0', source_port: '80', destination_port: '80', destination_address: '172.16.20.11', protocol: 'tcp', description: 'NAT port 80 to 172.16.10.11', rule_number: '10' }
+    - { action: 'set', source_address: '0.0.0.0/0', source_port: '443', destination_port: '443', destination_address: '172.16.20.11', protocol: 'tcp', description: 'NAT port 443 to 172.16.10.11', rule_number: '20' }
+    - { action: 'set', source_address: '123.123.123.123/32', source_port: '222', destination_port: '22', destination_address: '172.16.20.11', protocol: 'tcp', description: 'NAT port 443 to 172.16.10.11', rule_number: '30' }

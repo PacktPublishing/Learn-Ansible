@@ -1,0 +1,7 @@
+---
+# defaults file for roles/choc
+
+apps:
+  - "notepadplusplus.install"
+  - "putty.install"
+  - "googlechrome"

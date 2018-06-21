@@ -1,0 +1,47 @@
+---
+# tasks file for digitalocean/roles/droplet
+
+- name: "upload SSH key to DigitalOcean"
+  digital_ocean_sshkey:
+    oauth_token: "{{ do_token }}"
+    name: "{{ key.name }}"
+    ssh_pub_key: "{{ item }}"
+    state: present
+  with_file: "{{ key.path }}"
+
+- name: "gather facts on all of the SSH keys in DigitalOcean"
+  digital_ocean_sshkey_facts:
+    oauth_token: "{{ do_token }}"
+
+- name: "print the IP address of the droplet" 
+  debug:
+    msg: "{{ ssh_keys }}"
+
+- name: "set the SSH key ID as a fact"
+  set_fact:
+    pubkey: "{{ item.id }}"
+  with_items: "{{ ssh_keys | json_query(key_query) }}"
+  vars:
+    key_query: "[?name=='{{ key.name }}']"
+
+- name: "launch the droplet"
+  digital_ocean:
+    state: "present"
+    command: "droplet"
+    name: "{{ droplet.name }}"
+    unique_name: "yes"
+    api_token: "{{ do_token }}"
+    size_id: "{{ droplet.size }}"
+    region_id: "{{ droplet.region }}"
+    image_id: "{{ droplet.image }}"
+    ssh_key_ids: [ "{{ pubkey }}" ]
+    wait_timeout: "{{ droplet.timeout }}"
+  register: droplet
+
+- name: "set the droplet IP address as a fact"
+  set_fact:
+    droplet_ip: "{{ droplet.droplet.ip_address }}"
+
+- name: "print the IP address of the droplet" 
+  debug:
+    msg: "The IP of the droplet is {{ droplet_ip }}"

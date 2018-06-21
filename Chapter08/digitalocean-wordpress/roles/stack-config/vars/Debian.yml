@@ -1,0 +1,5 @@
+---
+
+php_fpm_path: "/etc/php/7.0/fpm/pool.d/www.conf"
+php_ini_path: "/etc/php/7.0/fpm/php.ini"
+php_service_name: "php7.0-fpm"
