@@ -1,6 +1,6 @@
 ---
 
-- name: Terminate everything in our AWS enviroment
+- name: Terminate everything in our basic AWS environment
   hosts: localhost
   connection: local
   gather_facts: True
