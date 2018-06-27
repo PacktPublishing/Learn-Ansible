@@ -1,0 +1,84 @@
+---
+# tasks file for roles/elb
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Ensuring that the target group is present in '{{ environment_name }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+
+- name: provision the target group
+  elb_target_group:
+    name: "{{ environment_name }}-target-group"
+    region: "{{ ec2_region }}"
+    protocol: "http"
+    port: "80"
+    deregistration_delay_timeout: "15"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    state: "present"
+    modify_targets: "false"
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Checking for an Elastic Load Balacner in '{{ environment_name }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+
+- name: provision an application elastic load balancer
+  elb_application_lb:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}-elb"
+    security_groups: "{{ sg_elb.group_id }}"
+    subnets: "{{ subnet_elb_ids }}"
+    listeners:
+      - Protocol: "HTTP" 
+        Port: "80"
+        DefaultActions:
+          - Type: "forward" 
+            TargetGroupName: "{{ environment_name }}-target-group"
+    state: present
+  register: loadbalancer
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    attachments:
+      - text: "Created an Elastic Load Balancer in '{{ environment_name }}'"
+        color: "#7CD197"
+        title: "System details"
+        fields:
+          - title: "ELB URL"
+            value: "{{ loadbalancer.dns_name }}"
+            short: False
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+  when: loadbalancer.changed
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    attachments:
+      - text: "Found an Elastic Load Balancer in '{{ environment_name }}'"
+        color: "#7CD197"
+        title: "System details"
+        fields:
+          - title: "ELB URL"
+            value: "{{ loadbalancer.dns_name }}"
+            short: False
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+  when: loadbalancer.changed == false and loadbalancer.failed == false
+
+# - name: print the information on the load balancer we have registered
+#   debug:
+#     msg: "{{ loadbalancer }}"

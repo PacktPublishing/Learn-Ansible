@@ -1,0 +1,15 @@
+---
+
+- hosts: localhost
+  gather_facts: false
+  debugger: "on_failed"
+
+  vars:
+    message: "The task has completed and all is well"
+    voice: "Daniel"
+
+  tasks:
+    - name: Say a message on your Ansible host
+      say:
+        msg: "{{ massage }}"
+        voice: "{{ voice }}"

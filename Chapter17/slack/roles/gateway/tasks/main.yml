@@ -1,0 +1,67 @@
+---
+# tasks file for roles/gateway
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Checking there is an internet getway configured in '{{ environment_name }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+
+- name: ensure that there is an internet gateway
+  ec2_vpc_igw:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    state: present
+    tags:
+      "Name": "{{ environment_name }}_internet_gateway"
+      "Environment": "{{ environment_name }}"
+      "Use": "gateway"
+  register: igw_info
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Adding an internet gateway in '{{ environment_name }}' which has an ID of '{{ igw_info.gateway_id }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+  when: igw_info.changed
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Found an internet gateway in '{{ environment_name }}' with an ID of '{{ igw_info.gateway_id }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+  when: igw_info.changed == false and igw_info.failed == false
+
+# - name: print the information we have registered
+#   debug:
+#     msg: "{{ igw_info }}"
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Ensuring that the route is present for the internet gateway in '{{ environment_name }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+
+- name: check that we can route through internet gateway
+  ec2_vpc_route_table:
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ vpc_info.vpc.id }}"
+    subnets: "{{ subnet_ec2_ids + subnet_elb_ids }}"
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw_info.gateway_id }}"
+    resource_tags:
+      "Name": "{{ environment_name }}_outbound"
+      "Environment": "{{ environment_name }}"

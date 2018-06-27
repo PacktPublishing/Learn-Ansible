@@ -1,0 +1,10 @@
+---
+# the common varibles
+
+environment_name: "VPC-Slack"
+ec2_region: "eu-west-1"
+
+slack:
+  token: "TBCRVDMGA/BBCPTPNH1/tyudQIccviG7gh4JnfeoPScc"
+  username: "Ansible"
+  icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Robot_icon.svg/200px-Robot_icon.svg.png"

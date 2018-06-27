@@ -1,0 +1,44 @@
+---
+# tasks file for vpc/roles/vpc
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Checking for VPC called '{{ environment_name }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+
+- name: ensure that the VPC is present
+  ec2_vpc_net:
+    region: "{{ ec2_region }}"
+    name: "{{ environment_name }}"
+    state: present
+    cidr_block: "{{ vpc_cidr_block }}"
+    resource_tags: { "Name" : "{{ environment_name }}", "Environment" : "{{ environment_name }}" }
+  register: vpc_info
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "VPC called '{{ environment_name }}' created with an ID of '{{ vpc_info.vpc.id }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+  when: vpc_info.changed
+
+- name: Send notification message via Slack all options
+  slack:
+    token: "{{ slack.token }}"
+    msg: "Found a VPC called '{{ environment_name }}' which has an ID of '{{ vpc_info.vpc.id }}'"
+    username: "{{ slack.username }}"
+    icon_url: "{{ slack.icon }}"
+    link_names: 0
+    parse: 'full'
+  when: vpc_info.changed == false and vpc_info.failed == false
+
+# - name: print the information we have registered
+#   debug:
+#     msg: "{{ vpc_info }}"
