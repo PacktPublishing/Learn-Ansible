@@ -76,7 +76,7 @@
     state: "started"
   with_items: "{{ singleinstance.instances }}"
 
-- name: add the instance to the taget group
+- name: add the instance to the target group
   elb_target_group:
     name: "{{ environment_name }}-target-group"
     region: "{{ ec2_region }}"

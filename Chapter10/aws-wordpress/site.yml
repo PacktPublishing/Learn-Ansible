@@ -1,6 +1,6 @@
 ---
 
-- name: Create, launch and configure our basic AWS enviroment
+- name: Create, launch and configure our basic AWS environment
   hosts: localhost
   connection: local
   gather_facts: True
